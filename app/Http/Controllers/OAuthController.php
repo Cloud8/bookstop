@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\OauthProvider;
-use App\Models\OAuthProvider as OAuthProviderModel;
-use App\Models\User;
+use App\Http\Requests\Auth\CompleteRegistrationRequest;
+use App\Services\OAuthService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class OAuthController extends Controller
 {
+    public function __construct(private readonly OAuthService $oauthService) {}
+
     public function redirect(string $provider): Response
     {
         if (! OauthProvider::tryFrom($provider)) {
@@ -33,66 +35,28 @@ class OAuthController extends Controller
         }
 
         try {
-            /** @var \Laravel\Socialite\Two\User $socialUser */
+            /** @var User $socialUser */
             $socialUser = Socialite::driver($provider)->user();
         } catch (Throwable) {
             return redirect()->route('login')->withErrors(['oauth' => 'Не удалось войти через внешний сервис.']);
         }
 
-        $oauthRecord = OAuthProviderModel::query()
-            ->with('user')
-            ->where('provider', $provider)
-            ->where('provider_id', $socialUser->getId())
-            ->first();
+        $result = $this->oauthService->handleCallback($provider, $socialUser);
 
-        if ($oauthRecord) {
-            $linkedUser = User::find($oauthRecord->user_id);
+        if ($result['action'] === 'needs_email') {
+            session()->put('oauth_pending', $result['pendingData']);
 
-            if (! $linkedUser) {
-                abort(500);
-            }
-
-            Auth::login($linkedUser);
-
-            return redirect()->intended('/cabinet');
+            return redirect()->route('auth.complete-registration');
         }
 
-        $email = $socialUser->getEmail();
-
-        if ($email) {
-            $user = User::query()->where('email', $email)->first();
-
-            if (! $user) {
-                $user = User::create([
-                    'name' => $socialUser->getName() ?? $email,
-                    'email' => $email,
-                    'password' => null,
-                    'email_verified_at' => now(),
-                ]);
-            }
-
-            OAuthProviderModel::create([
-                'user_id' => $user->id,
-                'provider' => $provider,
-                'provider_id' => $socialUser->getId(),
-                'token' => $socialUser->token,
-                'refresh_token' => $socialUser->refreshToken,
-            ]);
-
-            Auth::login($user);
-
-            return redirect('/cabinet');
+        if (! $result['user']) {
+            abort(500);
         }
 
-        session()->put('oauth_pending', [
-            'provider' => $provider,
-            'provider_id' => $socialUser->getId(),
-            'token' => $socialUser->token,
-            'refresh_token' => $socialUser->refreshToken,
-            'name' => $socialUser->getName(),
-        ]);
+        Auth::login($result['user']);
+        session()->regenerate();
 
-        return redirect()->route('auth.complete-registration');
+        return redirect()->intended(route('cabinet.index'));
     }
 
     public function showCompleteRegistration(): RedirectResponse|View
@@ -104,7 +68,7 @@ class OAuthController extends Controller
         return view('auth.complete-registration');
     }
 
-    public function completeRegistration(Request $request): RedirectResponse
+    public function completeRegistration(CompleteRegistrationRequest $request): RedirectResponse
     {
         if (! session()->has('oauth_pending')) {
             return redirect()->route('login');
@@ -112,53 +76,16 @@ class OAuthController extends Controller
 
         $pending = session()->get('oauth_pending');
 
-        $existingUser = User::query()->where('email', $request->input('email'))->first();
-
-        $request->validate([
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                $existingUser ? '' : 'unique:users',
-            ],
-        ]);
-
-        if ($existingUser) {
-            OAuthProviderModel::create([
-                'user_id' => $existingUser->id,
-                'provider' => $pending['provider'],
-                'provider_id' => $pending['provider_id'],
-                'token' => $pending['token'],
-                'refresh_token' => $pending['refresh_token'],
-            ]);
-
-            Auth::login($existingUser);
-            session()->forget('oauth_pending');
-
-            return redirect('/cabinet');
-        }
-
-        $user = User::create([
-            'name' => $pending['name'] ?? $request->input('email'),
-            'email' => $request->input('email'),
-            'password' => null,
-            'email_verified_at' => null,
-        ]);
-
-        OAuthProviderModel::create([
-            'user_id' => $user->id,
-            'provider' => $pending['provider'],
-            'provider_id' => $pending['provider_id'],
-            'token' => $pending['token'],
-            'refresh_token' => $pending['refresh_token'],
-        ]);
-
-        $user->sendEmailVerificationNotification();
+        $user = $this->oauthService->completeRegistration($request->validated('email'), $pending);
 
         Auth::login($user);
+        session()->regenerate();
         session()->forget('oauth_pending');
 
-        return redirect('/email/verify');
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
+        return redirect()->route('cabinet.index');
     }
 }
