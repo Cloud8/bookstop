@@ -134,7 +134,7 @@ class OAuthTest extends TestCase
             'email' => 'oauthuser@example.com',
         ]);
 
-        $response->assertRedirect('/email/verify');
+        $response->assertRedirect('/verify-email');
 
         $user = User::query()->where('email', 'oauthuser@example.com')->first();
         $this->assertNotNull($user);

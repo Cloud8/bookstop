@@ -12,7 +12,7 @@
             </p>
         </div>
 
-        <div class="bg-white border border-border-subtle rounded-xl shadow-sm p-8">
+        <div class="bg-surface border border-border-subtle rounded-xl shadow-sm p-8">
 
             {{-- General error --}}
             @if (session('error'))
