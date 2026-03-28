@@ -31,6 +31,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      mailpit:
+        condition: service_started
 
   # ── MySQL 8 ─────────────────────────────────────────────────────────────────
   # Healthcheck ensures php/nginx containers only start after MySQL is ready,
