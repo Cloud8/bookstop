@@ -136,7 +136,6 @@
                         <input
                             type="checkbox"
                             name="terms"
-                            required
                             class="mt-0.5 rounded border-border-subtle text-brand-600 focus:ring-brand-500 shrink-0"
                         >
                         <span class="text-sm font-sans text-text-muted leading-snug">
