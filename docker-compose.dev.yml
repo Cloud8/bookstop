@@ -42,3 +42,10 @@ services:
       - "9000:9000"
       # MinIO web console for bucket management during development.
       - "9001:9001"
+
+  mailpit:
+    ports:
+      # Web UI for viewing caught emails.
+      - "8025:8025"
+      # SMTP port — used by the PHP container.
+      - "1025:1025"

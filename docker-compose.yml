@@ -31,6 +31,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      mailpit:
+        condition: service_started
 
   # ── MySQL 8 ─────────────────────────────────────────────────────────────────
   # Healthcheck ensures php/nginx containers only start after MySQL is ready,
@@ -87,6 +89,14 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # ── Mailpit (local SMTP catcher) ────────────────────────────────────────────
+  # Catches all outgoing mail in dev. Web UI available at http://localhost:8025.
+  # SMTP listens on port 1025 inside the Docker network.
+  mailpit:
+    container_name: bookshop_mailpit
+    image: axllent/mailpit:latest
+    restart: unless-stopped
 
   # ── MinIO bucket initialiser ─────────────────────────────────────────────────
   # One-shot container that creates the required buckets on first run.
