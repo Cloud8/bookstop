@@ -6,7 +6,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\OAuthProvider;
 use App\Models\User;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
@@ -148,7 +148,7 @@ class OAuthTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            VerifyEmail::class
+            VerifyEmailNotification::class
         );
     }
 
