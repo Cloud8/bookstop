@@ -66,7 +66,6 @@ class AdminBookControllerTest extends TestCase
             'title' => 'Тестовая книга',
             'slug' => 'test-book',
             'price' => '590',
-            'status' => 'draft',
             'annotation' => 'Аннотация',
             'excerpt' => 'Отрывок',
             'fragment' => 'Фрагмент',
@@ -92,7 +91,6 @@ class AdminBookControllerTest extends TestCase
             'title' => 'Книга',
             'slug' => 'some-book',
             'price' => '100',
-            'status' => 'published',
             'sort_order' => 0,
         ]);
 

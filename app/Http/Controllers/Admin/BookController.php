@@ -74,7 +74,7 @@ class BookController extends Controller
             $request->file('epub'),
         );
 
-        return redirect()->route('admin.books.edit', $book->fresh())
+        return redirect()->route('admin.books.edit', $book)
             ->with('success', 'Книга обновлена.');
     }
 

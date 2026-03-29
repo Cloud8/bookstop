@@ -9,6 +9,7 @@ use App\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class BookAdminService
 {
@@ -58,7 +59,7 @@ class BookAdminService
                 if ($tempPath !== false) {
                     ProcessBookFileUpload::dispatch(
                         $book->id,
-                        storage_path('app/'.$tempPath),
+                        Storage::disk('local')->path($tempPath),
                         $epub->getClientOriginalExtension(),
                     );
                 }
@@ -108,7 +109,7 @@ class BookAdminService
                 if ($tempPath !== false) {
                     ProcessBookFileUpload::dispatch(
                         $book->id,
-                        storage_path('app/'.$tempPath),
+                        Storage::disk('local')->path($tempPath),
                         $epub->getClientOriginalExtension(),
                     );
                 }
