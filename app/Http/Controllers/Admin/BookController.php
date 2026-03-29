@@ -117,7 +117,10 @@ class BookController extends Controller
 
     public function destroy(Book $book): RedirectResponse
     {
-        Gate::authorize('delete', $book);
+        if (! Gate::allows('delete', $book)) {
+            return redirect()->route('admin.books.index')
+                ->with('error', 'Нельзя удалить опубликованную книгу.');
+        }
 
         $this->fileService->deleteCover($book);
         $this->fileService->deleteEpub($book);

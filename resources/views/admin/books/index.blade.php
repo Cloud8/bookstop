@@ -31,6 +31,13 @@
         </div>
     @endif
 
+    {{-- Flash error --}}
+    @if (session('error'))
+        <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Validation errors (e.g. toggle-status rule 17) --}}
     @if ($errors->any())
         <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">

@@ -250,9 +250,10 @@ class AdminBookControllerTest extends TestCase
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->published()->create();
 
-        // BookPolicy::delete returns false for published books → Gate throws 403
+        // BookPolicy::delete returns false for published books → redirect with error flash
         $this->actingAs($admin)->delete("/admin/books/{$book->slug}")
-            ->assertForbidden();
+            ->assertRedirect(route('admin.books.index'))
+            ->assertSessionHas('error');
 
         $this->assertDatabaseHas('books', ['id' => $book->id]);
     }
