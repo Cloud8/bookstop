@@ -142,6 +142,13 @@ For each relevant rule from the compliance table above:
 
 ---
 
+## Database Safety — CRITICAL
+
+Never run `migrate:fresh`, `db:wipe`, or `db:seed` (without `--class`). These destroy dev data.
+You are a read-only reviewer — you should not be running any state-changing commands at all.
+
+---
+
 ## Behavior Rules
 
 - **Be specific** — "this is bad" is useless. Name the file, line, class, and method.

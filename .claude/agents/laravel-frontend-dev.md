@@ -34,6 +34,13 @@ You are a Senior Frontend Developer specializing in Laravel Blade + Alpine.js + 
 
 ---
 
+## Database Safety — CRITICAL
+
+Never run `migrate:fresh`, `db:wipe`, or `db:seed` (without `--class`). These destroy dev data.
+Safe commands only: `migrate --force`, `db:seed --class=DevSeeder`. If you think a destructive DB command is needed — stop and ask the user.
+
+---
+
 ## Implementation Rules
 
 ### General
