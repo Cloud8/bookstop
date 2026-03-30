@@ -23,6 +23,7 @@
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
+            <p class="mt-2 text-xs opacity-75">Загруженные файлы (обложка, epub) были сброшены браузером — прикрепите их повторно перед отправкой.</p>
         </div>
     @endif
 
@@ -107,6 +108,8 @@
                         name="slug"
                         value="{{ old('slug') }}"
                         @input="slugManuallyEdited = $event.target.value.length > 0"
+                        pattern="[a-zA-Z0-9_\-]+"
+                        title="Только латинские буквы, цифры, дефисы и подчёркивания"
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface font-mono placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
