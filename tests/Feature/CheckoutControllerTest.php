@@ -187,7 +187,7 @@ class CheckoutControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Success page
+    // Success page (Rule 33)
     // -------------------------------------------------------------------------
 
     public function test_success_page_is_accessible_to_verified_user(): void
@@ -205,5 +205,83 @@ class CheckoutControllerTest extends TestCase
         $response = $this->get(route('checkout.success'));
 
         $response->assertRedirect(route('login'));
+    }
+
+    public function test_success_page_redirects_to_library_when_order_already_paid(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->paid()->create([
+            'user_id' => $user->id,
+            'stripe_session_id' => 'cs_test_already_paid',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('checkout.success').'?session_id=cs_test_already_paid');
+
+        $response->assertRedirect(route('cabinet.index'));
+    }
+
+    public function test_success_page_shows_polling_view_when_order_still_pending(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->pending()->create([
+            'user_id' => $user->id,
+            'stripe_session_id' => 'cs_test_pending',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('checkout.success').'?session_id=cs_test_pending');
+
+        $response->assertOk();
+        $response->assertViewIs('checkout.success');
+    }
+
+    // -------------------------------------------------------------------------
+    // Status endpoint (Rule 33)
+    // -------------------------------------------------------------------------
+
+    public function test_status_endpoint_returns_order_status_json(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->paid()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('checkout.status', $order));
+
+        $response->assertOk();
+        $response->assertJson(['status' => 'paid', 'paid' => true]);
+    }
+
+    public function test_status_endpoint_returns_pending_status(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('checkout.status', $order));
+
+        $response->assertOk();
+        $response->assertJson(['status' => 'pending', 'paid' => false]);
+    }
+
+    public function test_status_endpoint_returns_404_for_other_users_order(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $order = Order::factory()->pending()->create(['user_id' => $other->id]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('checkout.status', $order));
+
+        $response->assertNotFound();
+    }
+
+    public function test_status_endpoint_requires_auth(): void
+    {
+        $order = Order::factory()->pending()->create();
+
+        $response = $this->getJson(route('checkout.status', $order));
+
+        $response->assertUnauthorized();
     }
 }

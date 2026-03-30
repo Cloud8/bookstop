@@ -7,7 +7,9 @@ namespace App\Http\Controllers;
 use App\Contracts\PaymentProvider;
 use App\Enums\OrderStatus;
 use App\Exceptions\EmptyCartException;
+use App\Models\Order;
 use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +23,11 @@ class CheckoutController extends Controller
         private readonly PaymentProvider $paymentProvider,
     ) {}
 
+    /**
+     * Create a Stripe checkout session and redirect to Stripe.
+     *
+     * Rule 27: Order is created BEFORE Stripe redirect.
+     */
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -52,8 +59,51 @@ class CheckoutController extends Controller
         return redirect()->away($session['url']);
     }
 
-    public function success(Request $request): View
+    /**
+     * Handle the Stripe success redirect.
+     *
+     * Rule 33: If order is already paid (webhook was faster), redirect to library.
+     * Otherwise show polling page.
+     */
+    public function success(Request $request): View|RedirectResponse
     {
-        return view('checkout.success');
+        $stripeSessionId = $request->query('session_id');
+
+        if ($stripeSessionId) {
+            $order = Order::query()
+                ->where('stripe_session_id', $stripeSessionId)
+                ->where('user_id', $request->user()->id)
+                ->first();
+
+            // Rule 33: if already paid, redirect to library
+            if ($order && $order->status === OrderStatus::Paid) {
+                return redirect()->route('cabinet.index')
+                    ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
+            }
+
+            if ($order) {
+                return view('checkout.success', ['order' => $order]);
+            }
+        }
+
+        return view('checkout.success', ['order' => null]);
+    }
+
+    /**
+     * Polling endpoint: return order status as JSON.
+     *
+     * Rule 33: Client polls this every 2 seconds for up to 30 seconds.
+     */
+    public function status(Request $request, Order $order): JsonResponse
+    {
+        // Ensure the order belongs to the authenticated user
+        if ($order->user_id !== $request->user()->id) {
+            abort(404);
+        }
+
+        return response()->json([
+            'status' => $order->status->value,
+            'paid' => $order->status === OrderStatus::Paid,
+        ]);
     }
 }

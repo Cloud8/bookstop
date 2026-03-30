@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\PaymentProvider;
+use App\Events\OrderPaid;
 use App\Listeners\MergeGuestCartOnLogin;
+use App\Listeners\SendOrderConfirmationEmail;
 use App\Services\StripePaymentProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -38,5 +40,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Login::class, MergeGuestCartOnLogin::class);
+        Event::listen(OrderPaid::class, SendOrderConfirmationEmail::class);
     }
 }
