@@ -11,7 +11,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session;
 use Stripe\Exception\SignatureVerificationException;
-use Stripe\Stripe;
 use Stripe\Webhook;
 
 class WebhookController extends Controller
@@ -31,7 +30,6 @@ class WebhookController extends Controller
 
         // Rule 35: verify webhook signature
         try {
-            Stripe::setApiKey(config('services.stripe.secret'));
             $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
         } catch (SignatureVerificationException $e) {
             Log::warning('Stripe webhook signature verification failed', [

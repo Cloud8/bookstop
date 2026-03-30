@@ -219,7 +219,7 @@ class CheckoutControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->get(route('checkout.success').'?session_id=cs_test_already_paid');
 
-        $response->assertRedirect(route('cabinet.index'));
+        $response->assertRedirect('/cabinet/library');
     }
 
     public function test_success_page_shows_polling_view_when_order_still_pending(): void

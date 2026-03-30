@@ -13,6 +13,11 @@ use Stripe\Stripe;
 
 class StripePaymentProvider implements PaymentProvider
 {
+    public function __construct()
+    {
+        Stripe::setApiKey(config('services.stripe.secret'));
+    }
+
     /**
      * Create a Stripe Checkout session for the given order.
      *
@@ -20,7 +25,6 @@ class StripePaymentProvider implements PaymentProvider
      */
     public function createSession(Order $order, User $user): array
     {
-        Stripe::setApiKey(config('services.stripe.secret'));
 
         if (! $order->relationLoaded('items')) {
             $order->load('items.book');
@@ -47,6 +51,10 @@ class StripePaymentProvider implements PaymentProvider
             'client_reference_id' => (string) $order->id,
             'customer_email' => $user->email,
         ]);
+
+        if ($session->url === null) {
+            throw new \RuntimeException('Stripe did not return a checkout URL for session '.$session->id);
+        }
 
         return [
             'id' => $session->id,

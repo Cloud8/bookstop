@@ -11,7 +11,7 @@
 
 **Итого:** {{ number_format($order->total_amount / 100, 2, ',', ' ') }} ₽
 
-Книги доступны в вашей [библиотеке]({{ route('cabinet.index') }}).
+Книги доступны в вашей [библиотеке]({{ url('/cabinet/library') }}).
 
 С уважением,<br>
 {{ config('app.name') }}

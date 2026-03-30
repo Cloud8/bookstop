@@ -123,16 +123,6 @@ class StripeWebhookTest extends TestCase
         $event = $this->buildCheckoutSessionCompletedEvent('cs_test_valid_session', 'pi_test_intent_123');
         $webhook = $this->buildStripeWebhook($event);
 
-        $response = $this->post(
-            route('webhooks.stripe'),
-            [],
-            [
-                'Stripe-Signature' => $webhook['signature'],
-                'Content-Type' => 'application/json',
-            ]
-        );
-
-        // Send raw body manually — Laravel's withHeaders + post doesn't send raw JSON body
         $response = $this->call(
             'POST',
             route('webhooks.stripe'),

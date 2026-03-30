@@ -8,13 +8,13 @@
         <div class="text-success text-6xl mb-6">✓</div>
         <h1 class="text-3xl font-bold mb-4">Оплата прошла успешно!</h1>
         <p class="text-text-muted mb-8">Книги добавлены в вашу библиотеку.</p>
-        <a href="{{ route('cabinet.index') }}" class="btn-primary">Перейти в библиотеку</a>
+        <a href="{{ url('/cabinet/library') }}" class="btn-primary">Перейти в библиотеку</a>
 
     @elseif ($order)
         {{-- Pending — show polling page --}}
         <div
             x-data="orderStatusPoller('{{ route('checkout.status', $order) }}')"
-            x-init="startPolling"
+            x-init="startPolling()"
         >
             <div x-show="!paid && !timedOut">
                 <div class="text-4xl mb-6 animate-spin inline-block">⏳</div>
@@ -26,14 +26,14 @@
                 <div class="text-success text-6xl mb-6">✓</div>
                 <h1 class="text-3xl font-bold mb-4">Оплата прошла успешно!</h1>
                 <p class="text-text-muted mb-8">Книги добавлены в вашу библиотеку.</p>
-                <a href="{{ route('cabinet.index') }}" class="btn-primary">Перейти в библиотеку</a>
+                <a href="{{ url('/cabinet/library') }}" class="btn-primary">Перейти в библиотеку</a>
             </div>
 
             <div x-show="timedOut && !paid" x-cloak>
                 <div class="text-warning text-6xl mb-6">⏱</div>
                 <h1 class="text-3xl font-bold mb-4">Статус оплаты уточняется</h1>
                 <p class="text-text-muted mb-8">Проверьте библиотеку через несколько минут — книги появятся после подтверждения оплаты.</p>
-                <a href="{{ route('cabinet.index') }}" class="btn-primary">Перейти в библиотеку</a>
+                <a href="{{ url('/cabinet/library') }}" class="btn-primary">Перейти в библиотеку</a>
             </div>
         </div>
 
@@ -42,7 +42,7 @@
         <div class="text-6xl mb-6">📚</div>
         <h1 class="text-3xl font-bold mb-4">Спасибо за покупку!</h1>
         <p class="text-text-muted mb-8">Ваши книги будут доступны в библиотеке после подтверждения оплаты.</p>
-        <a href="{{ route('cabinet.index') }}" class="btn-primary">Перейти в библиотеку</a>
+        <a href="{{ url('/cabinet/library') }}" class="btn-primary">Перейти в библиотеку</a>
     @endif
 
 </div>
