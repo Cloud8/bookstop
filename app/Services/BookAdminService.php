@@ -74,6 +74,8 @@ class BookAdminService
      * dispatch the epub upload job if a new epub file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in rubles)
+     *
+     * @throws \InvalidArgumentException if Rule 17 is violated (cannot unpublish a book with purchases)
      */
     public function updateBook(
         Book $book,
@@ -82,6 +84,13 @@ class BookAdminService
         ?UploadedFile $coverThumb,
         ?UploadedFile $epub,
     ): Book {
+        $newStatus = BookStatus::from($data['status']);
+
+        // Rule 17: a published book that has purchases cannot be unpublished.
+        if ($book->status === BookStatus::Published && $newStatus === BookStatus::Draft && $book->hasAnyPurchases()) {
+            throw new \InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
+        }
+
         return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];

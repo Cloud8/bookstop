@@ -19,6 +19,12 @@ class StoreBookRequest extends FormRequest
     }
 
     /**
+     * Validation rules for creating a new book.
+     *
+     * Note: `status` is intentionally excluded. Per Rule 14, new books are always
+     * created with status = draft. BookAdminService enforces this unconditionally,
+     * so any submitted `status` value must be ignored at the request level.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array

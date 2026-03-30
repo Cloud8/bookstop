@@ -17,13 +17,13 @@
 
     {{-- Flash success --}}
     @if (session('success'))
-        <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+        <div class="mb-6 px-4 py-3 bg-success-light border border-success-border rounded-lg text-sm text-success">
             {{ session('success') }}
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div class="mb-6 px-4 py-3 bg-error-light border border-error-border rounded-lg text-sm text-error">
             <p class="font-medium mb-1">Пожалуйста, исправьте ошибки:</p>
             <ul class="list-disc list-inside space-y-0.5">
                 @foreach ($errors->all() as $error)
@@ -37,6 +37,9 @@
         method="POST"
         action="{{ route('admin.books.update', $book) }}"
         enctype="multipart/form-data"
+        {{-- NOTE: The transliterate/slugify logic below is duplicated in create.blade.php.
+             This is intentional until a shared Alpine.js module (e.g. via @js or a
+             dedicated JS file loaded via @vite) is introduced. --}}
         x-data="{
             slugManuallyEdited: true,
             transliterate(text) {
@@ -81,7 +84,7 @@
                 {{-- Title --}}
                 <div>
                     <label for="title" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Название <span class="text-red-500">*</span>
+                        Название <span class="text-error">*</span>
                     </label>
                     <input
                         id="title"
@@ -92,17 +95,17 @@
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('title') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('title') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     @error('title')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Slug --}}
                 <div>
                     <label for="slug" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Slug <span class="text-red-500">*</span>
+                        Slug <span class="text-error">*</span>
                     </label>
                     <input
                         id="slug"
@@ -114,18 +117,18 @@
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface font-mono placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('slug') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('slug') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">Используется в URL книги.</p>
                     @error('slug')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Price --}}
                 <div>
                     <label for="price" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Цена (в рублях) <span class="text-red-500">*</span>
+                        Цена (в рублях) <span class="text-error">*</span>
                     </label>
                     <input
                         id="price"
@@ -137,33 +140,33 @@
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('price') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">
                         Текущая цена: {{ number_format($book->price / 100, 0, '.', ' ') }} ₽
                     </p>
                     @error('price')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Status --}}
                 <div>
                     <label for="status" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Статус <span class="text-red-500">*</span>
+                        Статус <span class="text-error">*</span>
                     </label>
                     <select
                         id="status"
                         name="status"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('status') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('status') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                         <option value="draft" @selected(old('status', $book->status->value) === 'draft')>Черновик</option>
                         <option value="published" @selected(old('status', $book->status->value) === 'published')>Опубликована</option>
                     </select>
                     @error('status')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -184,10 +187,10 @@
                         rows="4"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('annotation') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('annotation') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >{{ old('annotation', $book->annotation) }}</textarea>
                     @error('annotation')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -202,10 +205,10 @@
                         rows="6"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('excerpt') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('excerpt') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >{{ old('excerpt', $book->excerpt) }}</textarea>
                     @error('excerpt')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -221,10 +224,10 @@
                         rows="12"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('fragment') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('fragment') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >{{ old('fragment', $book->fragment) }}</textarea>
                     @error('fragment')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -265,7 +268,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('cover')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -300,7 +303,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('cover_thumb')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -331,7 +334,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('epub')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -356,7 +359,7 @@
                         <span class="text-xs text-text-subtle ml-1">— показывать на главной странице</span>
                     </label>
                     @error('is_featured')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -373,11 +376,11 @@
                         min="0"
                         class="w-32 px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('sort_order') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('sort_order') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">Меньшее число — выше в списке.</p>
                     @error('sort_order')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -405,7 +408,7 @@
 
     {{-- Delete section --}}
     <div
-        class="mt-10 border border-red-200 rounded-xl p-6"
+        class="mt-10 border border-error-border rounded-xl p-6"
         x-data="{ open: false }"
     >
         <h2 class="text-sm font-sans font-semibold text-text-primary mb-1">Удалить книгу</h2>
@@ -414,7 +417,7 @@
         </p>
         <button
             @click="open = true"
-            class="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+            class="px-4 py-2 text-sm font-medium text-error border border-error-border rounded-lg hover:bg-error-light transition focus:outline-none focus:ring-2 focus:ring-error focus:ring-offset-2"
         >
             Удалить книгу
         </button>
@@ -449,7 +452,7 @@
                         @method('DELETE')
                         <button
                             type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            class="px-4 py-2 text-sm font-medium text-white bg-error-muted hover:bg-error-hover rounded-lg transition focus:outline-none focus:ring-2 focus:ring-error focus:ring-offset-2"
                         >
                             Удалить
                         </button>

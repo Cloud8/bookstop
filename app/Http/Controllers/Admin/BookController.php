@@ -55,24 +55,18 @@ class BookController extends Controller
 
     public function update(UpdateBookRequest $request, Book $book): RedirectResponse
     {
-        $data = $request->validated();
-        $newStatus = BookStatus::from($data['status']);
-
-        // Rule 17: cannot unpublish a book that has purchases
-        if ($book->status === BookStatus::Published && $newStatus === BookStatus::Draft) {
-            if ($book->hasAnyPurchases()) {
-                return redirect()->route('admin.books.edit', $book)
-                    ->withErrors(['status' => 'Нельзя снять с публикации книгу, у которой есть покупки.']);
-            }
+        try {
+            $book = $this->bookAdminService->updateBook(
+                $book,
+                $request->validated(),
+                $request->file('cover'),
+                $request->file('cover_thumb'),
+                $request->file('epub'),
+            );
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('admin.books.edit', $book)
+                ->withErrors(['status' => $e->getMessage()]);
         }
-
-        $book = $this->bookAdminService->updateBook(
-            $book,
-            $data,
-            $request->file('cover'),
-            $request->file('cover_thumb'),
-            $request->file('epub'),
-        );
 
         return redirect()->route('admin.books.edit', $book)
             ->with('success', 'Книга обновлена.');

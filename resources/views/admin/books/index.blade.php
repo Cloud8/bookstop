@@ -26,21 +26,21 @@
 
     {{-- Flash success --}}
     @if (session('success'))
-        <div class="mb-5 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+        <div class="mb-5 px-4 py-3 bg-success-light border border-success-border rounded-lg text-sm text-success">
             {{ session('success') }}
         </div>
     @endif
 
     {{-- Flash error --}}
     @if (session('error'))
-        <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div class="mb-5 px-4 py-3 bg-error-light border border-error-border rounded-lg text-sm text-error">
             {{ session('error') }}
         </div>
     @endif
 
     {{-- Validation errors (e.g. toggle-status rule 17) --}}
     @if ($errors->any())
-        <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div class="mb-5 px-4 py-3 bg-error-light border border-error-border rounded-lg text-sm text-error">
             @foreach ($errors->all() as $error)
                 <p>{{ $error }}</p>
             @endforeach
@@ -153,16 +153,16 @@
                                             :disabled="loading"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-1"
                                             :class="{
-                                                'bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500': status === 'published',
-                                                'bg-gray-100 text-gray-600 hover:bg-gray-200 focus:ring-gray-400': status === 'draft',
+                                                'bg-success-light text-success hover:bg-success-border focus:ring-success': status === 'published',
+                                                'bg-surface-muted text-text-muted hover:bg-border-subtle focus:ring-text-subtle': status === 'draft',
                                                 'opacity-50 cursor-not-allowed': loading
                                             }"
                                         >
                                             <span
                                                 class="w-1.5 h-1.5 rounded-full shrink-0"
                                                 :class="{
-                                                    'bg-green-500': status === 'published',
-                                                    'bg-gray-400': status === 'draft'
+                                                    'bg-success-dot': status === 'published',
+                                                    'bg-text-subtle': status === 'draft'
                                                 }"
                                             ></span>
                                             <span x-text="status === 'published' ? 'Опубликована' : 'Черновик'"></span>
@@ -208,12 +208,14 @@
                                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path
                                                     x-show="featured"
+                                                    x-cloak
                                                     d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
                                                 />
                                             </svg>
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path
                                                     x-show="!featured"
+                                                    x-cloak
                                                     stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                                     d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
                                                 />
@@ -242,7 +244,7 @@
                                         >
                                             <button
                                                 @click="open = true"
-                                                class="p-1.5 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                class="p-1.5 text-text-muted hover:text-error hover:bg-error-light rounded-lg transition"
                                                 aria-label="Удалить"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +282,7 @@
                                                             @method('DELETE')
                                                             <button
                                                                 type="submit"
-                                                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                                                class="px-4 py-2 text-sm font-medium text-white bg-error-muted hover:bg-error-hover rounded-lg transition focus:outline-none focus:ring-2 focus:ring-error focus:ring-offset-2"
                                                             >
                                                                 Удалить
                                                             </button>

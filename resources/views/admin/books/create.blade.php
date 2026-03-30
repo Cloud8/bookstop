@@ -16,7 +16,7 @@
     </div>
 
     @if ($errors->any())
-        <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div class="mb-6 px-4 py-3 bg-error-light border border-error-border rounded-lg text-sm text-error">
             <p class="font-medium mb-1">Пожалуйста, исправьте ошибки:</p>
             <ul class="list-disc list-inside space-y-0.5">
                 @foreach ($errors->all() as $error)
@@ -30,6 +30,9 @@
         method="POST"
         action="{{ route('admin.books.store') }}"
         enctype="multipart/form-data"
+        {{-- NOTE: The transliterate/slugify logic below is duplicated in edit.blade.php.
+             This is intentional until a shared Alpine.js module (e.g. via @js or a
+             dedicated JS file loaded via @vite) is introduced. --}}
         x-data="{
             slugManuallyEdited: false,
             transliterate(text) {
@@ -73,7 +76,7 @@
                 {{-- Title --}}
                 <div>
                     <label for="title" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Название <span class="text-red-500">*</span>
+                        Название <span class="text-error">*</span>
                     </label>
                     <input
                         id="title"
@@ -84,18 +87,18 @@
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('title') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('title') border-error-dot bg-error-light @else border-border-subtle @enderror"
                         placeholder="Название книги"
                     >
                     @error('title')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Slug --}}
                 <div>
                     <label for="slug" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Slug <span class="text-red-500">*</span>
+                        Slug <span class="text-error">*</span>
                     </label>
                     <input
                         id="slug"
@@ -107,19 +110,19 @@
                         required
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface font-mono placeholder:text-text-subtle transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('slug') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('slug') border-error-dot bg-error-light @else border-border-subtle @enderror"
                         placeholder="nazvanie-knigi"
                     >
                     <p class="mt-1 text-xs text-text-subtle">Используется в URL. Автозаполняется из названия.</p>
                     @error('slug')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Price --}}
                 <div>
                     <label for="price" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Цена (в рублях) <span class="text-red-500">*</span>
+                        Цена (в рублях) <span class="text-error">*</span>
                     </label>
                     <div class="relative">
                         <input
@@ -132,13 +135,13 @@
                             required
                             class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
                                 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                                @error('price') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                                @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
                             placeholder="499"
                         >
                     </div>
                     <p class="mt-1 text-xs text-text-subtle">Введите сумму в рублях. Например: 499</p>
                     @error('price')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -159,11 +162,11 @@
                         rows="4"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('annotation') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('annotation') border-error-dot bg-error-light @else border-border-subtle @enderror"
                         placeholder="Краткое описание книги для каталога..."
                     >{{ old('annotation') }}</textarea>
                     @error('annotation')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -178,11 +181,11 @@
                         rows="6"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('excerpt') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('excerpt') border-error-dot bg-error-light @else border-border-subtle @enderror"
                         placeholder="Короткий отрывок для страницы книги..."
                     >{{ old('excerpt') }}</textarea>
                     @error('excerpt')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -198,11 +201,11 @@
                         rows="12"
                         class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('fragment') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('fragment') border-error-dot bg-error-light @else border-border-subtle @enderror"
                         placeholder="Ознакомительный фрагмент книги..."
                     >{{ old('fragment') }}</textarea>
                     @error('fragment')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -230,7 +233,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('cover')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -252,7 +255,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('cover_thumb')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -274,7 +277,7 @@
                             file:transition file:cursor-pointer cursor-pointer"
                     >
                     @error('epub')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -299,7 +302,7 @@
                         <span class="text-xs text-text-subtle ml-1">— показывать на главной странице</span>
                     </label>
                     @error('is_featured')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -316,11 +319,11 @@
                         min="0"
                         class="w-32 px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
                             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('sort_order') border-red-400 bg-red-50 @else border-border-subtle @enderror"
+                            @error('sort_order') border-error-dot bg-error-light @else border-border-subtle @enderror"
                     >
                     <p class="mt-1 text-xs text-text-subtle">Меньшее число — выше в списке.</p>
                     @error('sort_order')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>
 
