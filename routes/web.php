@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CabinetController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\ProfileController;
@@ -59,6 +60,12 @@ Route::middleware('guest')->group(function () {
         ->name('auth.complete-registration');
     Route::post('/auth/complete-registration', [OAuthController::class, 'completeRegistration'])
         ->name('auth.complete-registration.store');
+});
+
+// Checkout routes (auth + verified)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 });
 
 // User cabinet (auth + verified)
