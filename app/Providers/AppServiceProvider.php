@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\MergeGuestCartOnLogin;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -29,5 +31,7 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('instagram', \SocialiteProviders\Instagram\Provider::class);
             $event->extendSocialite('facebook', \SocialiteProviders\Facebook\Provider::class);
         });
+
+        Event::listen(Login::class, MergeGuestCartOnLogin::class);
     }
 }
