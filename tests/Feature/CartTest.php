@@ -144,7 +144,8 @@ class CartTest extends TestCase
         CartItem::factory()->create(['user_id' => $user->id, 'book_id' => $book2->id]);
 
         $service = app(CartService::class);
-        $total = $service->getTotal($user, 'session-abc');
+        $items = $service->getItems($user, 'session-abc');
+        $total = $service->getTotalFromItems($items);
 
         $this->assertSame(98900, $total);
     }

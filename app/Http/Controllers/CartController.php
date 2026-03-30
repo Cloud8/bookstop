@@ -20,7 +20,7 @@ class CartController extends Controller
         $sessionId = session()->getId();
 
         $items = $this->cartService->getItems($user, $sessionId);
-        $total = $this->cartService->getTotal($user, $sessionId);
+        $total = $this->cartService->getTotalFromItems($items);
 
         return view('cart.index', compact('items', 'total'));
     }

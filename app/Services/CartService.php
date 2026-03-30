@@ -134,12 +134,12 @@ class CartService
     }
 
     /**
-     * Get the total price (in kopecks) of all books in the cart.
+     * Get the total price (in kopecks) from an already-loaded items collection.
+     *
+     * @param  Collection<int, CartItem>  $items
      */
-    public function getTotal(?User $user, string $sessionId): int
+    public function getTotalFromItems(Collection $items): int
     {
-        $items = $this->getItems($user, $sessionId);
-
         return $items->sum(fn (CartItem $item): int => $item->book->price ?? 0);
     }
 
