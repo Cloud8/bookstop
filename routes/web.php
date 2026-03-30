@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BookController as AdminBookController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CabinetController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\ProfileController;
@@ -35,6 +36,11 @@ foreach ($staticPages as $page) {
         ->name("static.{$page}")
         ->defaults('page', $page);
 }
+
+// Cart routes (guests and authenticated users)
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/{book}', [CartController::class, 'store'])->name('cart.store');
+Route::delete('/cart/{book}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 // Profile routes (auth only)
 Route::middleware('auth')->group(function () {
