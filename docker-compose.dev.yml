@@ -50,6 +50,25 @@ services:
       # SMTP port — used by the PHP container.
       - "1025:1025"
 
+  queue:
+    container_name: bookshop_queue
+    build:
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    environment:
+      APP_ENV:   local
+      APP_DEBUG: "true"
+    volumes:
+      - .:/var/www:delegated
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    command: php artisan queue:work --sleep=3 --tries=3 --backoff=10
+    depends_on:
+      php:
+        condition: service_started
+    restart: unless-stopped
+
   node:
     image: node:22-alpine
     container_name: bookshop_node
