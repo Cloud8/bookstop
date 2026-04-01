@@ -75,7 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/webhooks/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
 
 // Download (auth + verified + rate limited)
-Route::get('/books/{book}/download', [DownloadController::class, 'show'])
+Route::get('/books/{book:slug}/download', [DownloadController::class, 'show'])
     ->middleware(['auth', 'verified', 'throttle:download'])
     ->name('books.download');
 

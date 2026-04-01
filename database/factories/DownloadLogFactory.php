@@ -16,7 +16,6 @@ class DownloadLogFactory extends Factory
 {
     protected $model = DownloadLog::class;
 
-    /** @return array<string, mixed> */
     public function definition(): array
     {
         return [

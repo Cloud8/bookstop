@@ -7,9 +7,11 @@ namespace Tests\Feature;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\UserBook;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 class DownloadControllerTest extends TestCase
@@ -26,20 +28,29 @@ class DownloadControllerTest extends TestCase
         return route('books.download', $book);
     }
 
+    /**
+     * Swap the s3-private disk with a mock that returns a predictable temporaryUrl.
+     */
+    private function mockPrivateDisk(): void
+    {
+        $mock = Mockery::mock(Filesystem::class);
+        $mock->shouldReceive('temporaryUrl')
+            ->andReturn('https://s3.example.com/fake-signed-url');
+
+        Storage::set('s3-private', $mock);
+    }
+
     public function test_owner_can_download_book(): void
     {
-        Storage::fake('s3-private');
+        $this->mockPrivateDisk();
 
         $user = User::factory()->create();
         $book = $this->makeBookWithEpub();
         UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
 
-        // Store a fake file so temporaryUrl does not fail
-        Storage::disk('s3-private')->put('epubs/test-book.epub', 'epub content');
-
         $response = $this->actingAs($user)->get($this->downloadUrl($book));
 
-        $response->assertRedirect();
+        $response->assertRedirect('https://s3.example.com/fake-signed-url');
 
         $this->assertDatabaseHas('download_logs', [
             'user_id' => $user->id,
@@ -58,8 +69,6 @@ class DownloadControllerTest extends TestCase
 
     public function test_non_owner_gets_403(): void
     {
-        Storage::fake('s3-private');
-
         $user = User::factory()->create();
         $book = $this->makeBookWithEpub();
         // No UserBook record — user does not own the book
@@ -82,13 +91,11 @@ class DownloadControllerTest extends TestCase
 
     public function test_rate_limit_returns_429_after_10_requests(): void
     {
-        Storage::fake('s3-private');
+        $this->mockPrivateDisk();
 
         $user = User::factory()->create();
         $book = $this->makeBookWithEpub();
         UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
-
-        Storage::disk('s3-private')->put('epubs/test-book.epub', 'epub content');
 
         // Clear any cached rate limiter state
         RateLimiter::clear('download:'.$user->id.':'.$book->id);

@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Models\Book;
 use App\Models\DownloadLog;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DownloadService
@@ -20,12 +19,12 @@ class DownloadService
         );
     }
 
-    public function logDownload(User $user, Book $book, Request $request): void
+    public function logDownload(User $user, Book $book, string $ipAddress): void
     {
         DownloadLog::create([
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'ip_address' => $request->ip(),
+            'ip_address' => $ipAddress,
             'downloaded_at' => now(),
         ]);
     }

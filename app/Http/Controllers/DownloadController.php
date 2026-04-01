@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\User;
 use App\Services\DownloadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,9 +23,10 @@ class DownloadController extends Controller
             abort(404);
         }
 
+        /** @var User $user */
         $user = $request->user();
 
-        $this->downloadService->logDownload($user, $book, $request);
+        $this->downloadService->logDownload($user, $book, (string) $request->ip());
 
         return redirect($this->downloadService->generateUrl($book));
     }
