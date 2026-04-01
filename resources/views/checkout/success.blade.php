@@ -14,7 +14,7 @@
         <h1 class="font-serif text-3xl text-text-primary mb-3">Оплата прошла успешно!</h1>
         <p class="font-sans text-text-muted mb-8">Ваши книги добавлены в библиотеку.</p>
         <a
-            href="{{ url('/cabinet/library') }}"
+            href="{{ route('cabinet.index') }}"
             class="inline-block px-8 py-3 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
         >
             Перейти в библиотеку
@@ -54,7 +54,7 @@
                 <h1 class="font-serif text-3xl text-text-primary mb-3">Оплата прошла успешно!</h1>
                 <p class="font-sans text-text-muted mb-8">Ваши книги добавлены в библиотеку.</p>
                 <a
-                    href="{{ url('/cabinet/library') }}"
+                    href="{{ route('cabinet.index') }}"
                     class="inline-block px-8 py-3 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
                 >
                     Перейти в библиотеку
@@ -73,7 +73,7 @@
                     Проверьте библиотеку через несколько минут — книги появятся после подтверждения оплаты.
                 </p>
                 <a
-                    href="{{ url('/cabinet/library') }}"
+                    href="{{ route('cabinet.index') }}"
                     class="inline-block px-8 py-3 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
                 >
                     Перейти в библиотеку
@@ -94,7 +94,7 @@
         <h1 class="font-serif text-3xl text-text-primary mb-3">Спасибо за покупку!</h1>
         <p class="font-sans text-text-muted mb-8">Ваши книги будут доступны в библиотеке после подтверждения оплаты.</p>
         <a
-            href="{{ url('/cabinet/library') }}"
+            href="{{ route('cabinet.index') }}"
             class="inline-block px-8 py-3 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
         >
             Перейти в библиотеку
@@ -126,7 +126,7 @@
                             this.paid = true;
                             clearInterval(interval);
                             setTimeout(() => {
-                                window.location.href = '/cabinet/library';
+                                window.location.href = '{{ route('cabinet.index') }}';
                             }, 2000);
                             return;
                         }
