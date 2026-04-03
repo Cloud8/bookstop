@@ -75,7 +75,7 @@ class BookAdminService
      *
      * @param  array<string, mixed>  $data  Validated form data (price in rubles)
      *
-     * @throws \InvalidArgumentException if Rule 17 is violated (cannot unpublish a book with purchases)
+     * @throws \InvalidArgumentException|\Throwable if Rule 17 is violated (cannot unpublish a book with purchases)
      */
     public function updateBook(
         Book $book,
