@@ -44,9 +44,19 @@ class OAuthController extends Controller
 
         // Handle OAuth provider linking for authenticated users (Rule C1).
         if (session()->pull('oauth_link_intent')) {
+            if (! Auth::check()) {
+                return redirect()->route('login');
+            }
+
             /** @var UserModel $authUser */
             $authUser = Auth::user();
-            $this->oauthService->linkProvider($authUser, $provider, $socialUser);
+
+            try {
+                $this->oauthService->linkProvider($authUser, $provider, $socialUser);
+            } catch (\RuntimeException $e) {
+                return redirect()->route('cabinet.settings')
+                    ->withErrors(['provider' => $e->getMessage()]);
+            }
 
             return redirect()->route('cabinet.settings')->with('status', 'provider-linked');
         }
@@ -62,6 +72,8 @@ class OAuthController extends Controller
         if (! $result['user']) {
             abort(500);
         }
+
+        session()->put('_guest_cart_session_id', session()->getId());
 
         Auth::login($result['user']);
         session()->regenerate();
@@ -87,6 +99,8 @@ class OAuthController extends Controller
         $pending = session()->get('oauth_pending');
 
         $user = $this->oauthService->completeRegistration($request->validated('email'), $pending);
+
+        session()->put('_guest_cart_session_id', session()->getId());
 
         Auth::login($user);
         session()->regenerate();
