@@ -46,12 +46,16 @@ class SitemapController extends Controller
             );
 
         Book::query()->published()->each(function (Book $book) use ($sitemap): void {
-            $sitemap->add(
-                Url::create(route('books.show', $book))
-                    ->setPriority(0.8)
-                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
-                    ->setLastModificationDate($book->updated_at)
-            );
+            $url = Url::create(route('books.show', $book))
+                ->setPriority(0.8)
+                ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
+                ->setLastModificationDate($book->updated_at);
+
+            if ($book->cover_url) {
+                $url->addImage($book->cover_url, $book->title);
+            }
+
+            $sitemap->add($url);
         });
 
         $sitemap->add(
