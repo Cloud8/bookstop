@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Features\Blog\Services\HtmlSanitizerService;
+use App\Features\Admin\Services\HtmlSanitizerService;
 use Tests\TestCase;
 
 class HtmlSanitizerServiceTest extends TestCase

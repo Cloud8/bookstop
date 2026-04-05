@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Features\Blog\Services;
+namespace App\Features\Admin\Services;
 
 use HTMLPurifier;
 use HTMLPurifier_Config;
