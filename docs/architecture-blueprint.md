@@ -564,7 +564,7 @@ Blade views for all cabinet pages. Backend must be complete first.
 | Model | Post | Eloquent model for blog posts with status enum cast |
 | Enum | PostStatus | String-backed enum: draft, published |
 | Controller | PostController | Serve public blog index (paginated) and individual post pages |
-| Service | HtmlSanitizerService | Wrap HtmlPurifier; sanitize post body HTML before save |
+| Service | HtmlSanitizerService | Wrap HtmlPurifier; sanitize post body HTML before save. **Must be called in Phase 11 `Admin\PostController` (or a PostAdminService) on store/update — not wired to the model.** |
 
 ---
 
@@ -723,7 +723,7 @@ Public subscribe/unsubscribe routes (no auth):
 | Model | StaticPage | Eloquent model for admin-managed static pages |
 | Controller | NewsletterController | Handle public subscribe/confirm/unsubscribe flows |
 | Controller | Admin\OrderController | List all orders and show order detail in admin panel |
-| Controller | Admin\PostController | Full CRUD for blog posts in admin panel |
+| Controller | Admin\PostController | Full CRUD for blog posts in admin panel. **Must call `HtmlSanitizerService::sanitize()` on `body` before saving (store + update).** |
 | Controller | Admin\StaticPageController | List and edit static pages in admin panel |
 | Controller | Admin\NewsletterController | List subscribers, compose and send newsletter via SMTP |
 | Request | Admin\StorePostRequest | Validate post creation: title, slug, excerpt, body (HTML), cover, status, published_at |
