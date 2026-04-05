@@ -11,7 +11,7 @@ class PostObserver
 {
     public function updated(Post $post): void
     {
-        if ($post->wasChanged('status')) {
+        if ($post->wasChanged('status', 'slug')) {
             Cache::forget('sitemap.xml');
         }
     }

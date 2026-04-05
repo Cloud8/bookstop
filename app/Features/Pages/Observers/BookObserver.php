@@ -11,7 +11,7 @@ class BookObserver
 {
     public function updated(Book $book): void
     {
-        if ($book->wasChanged('status')) {
+        if ($book->wasChanged('status', 'slug')) {
             Cache::forget('sitemap.xml');
         }
     }
