@@ -803,6 +803,8 @@ Note: Unsubscribe and confirm links are handled by Resend — no local routes ne
 **11.5 — Frontend**
 - All admin Blade views: posts, users, orders, user-books, download-logs, newsletter
 - Public newsletter subscribe form (single field, no confirm/unsubscribe pages — handled by Resend)
+- GA4 script tag in `layouts/app.blade.php` (`GOOGLE_ANALYTICS_ID` from `config/services.php`, skipped when empty)
+- GA4 custom events: `add_to_cart`, `begin_checkout`, `purchase` (checkout/success), `file_download` (library)
 
 ---
 
