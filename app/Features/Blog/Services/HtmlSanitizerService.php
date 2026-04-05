@@ -7,10 +7,6 @@ namespace App\Features\Blog\Services;
 use HTMLPurifier;
 use HTMLPurifier_Config;
 
-// TODO (Phase 11): Call sanitize($html) in Admin\PostAdminService::store() and update()
-// before saving post body to the database. This service is intentionally not wired to
-// the Post model — sanitization must happen at the write boundary (admin service layer),
-// not on every read. See architecture-blueprint.md Phase 11 for PostAdminService spec.
 class HtmlSanitizerService
 {
     private HTMLPurifier $purifier;

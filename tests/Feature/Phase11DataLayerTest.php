@@ -36,7 +36,7 @@ class Phase11DataLayerTest extends TestCase
      */
     public function test_banned_user_gets_403_on_authenticated_web_route(): void
     {
-        $user = User::factory()->create(['banned_at' => now()]);
+        $user = User::factory()->banned()->create();
 
         $response = $this->actingAs($user)->get(route('home'));
 
@@ -62,10 +62,9 @@ class Phase11DataLayerTest extends TestCase
     {
         $user = User::factory()->create();
         $book = $this->makeBookWithEpub();
-        UserBook::factory()->create([
+        UserBook::factory()->revoked()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'revoked_at' => now(),
         ]);
 
         $response = $this->actingAs($user)->get(route('books.download', $book));

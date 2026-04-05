@@ -9,7 +9,7 @@
     @foreach ($posts as $post)
         <div class="border rounded p-4 mb-2">
             <span>{{ $post->title }}</span>
-            <span class="text-sm text-gray-500">{{ $post->status->value }}</span>
+            <span class="text-sm text-text-muted">{{ $post->status->value }}</span>
             <a href="{{ route('admin.posts.edit', $post) }}">Редактировать</a>
         </div>
     @endforeach

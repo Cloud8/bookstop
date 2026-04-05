@@ -39,7 +39,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'newsletter_consent',
-        'banned_at',
     ];
 
     /**

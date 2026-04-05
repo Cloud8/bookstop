@@ -95,7 +95,9 @@ class PostAdminService
     {
         $path = $file->store('posts/covers', 's3-public');
 
-        return (string) $path;
+        throw_if($path === false, \RuntimeException::class, 'Cover upload failed.');
+
+        return $path;
     }
 
     private function deleteCoverIfExists(Post $post): void
