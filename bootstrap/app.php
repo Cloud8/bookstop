@@ -30,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withCommands([
         __DIR__.'/../app/Features/Pages/Commands',
+        __DIR__.'/../app/Features/Cart/Commands',
+        __DIR__.'/../app/Features/Checkout/Commands',
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
