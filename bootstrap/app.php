@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             '/webhooks/stripe',
         ]);
     })
+    ->withCommands([
+        __DIR__.'/../app/Features/Pages/Commands',
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
     })->create();
