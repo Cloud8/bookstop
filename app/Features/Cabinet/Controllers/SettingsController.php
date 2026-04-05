@@ -10,7 +10,7 @@ use App\Features\Cabinet\Requests\UpdatePasswordRequest;
 use App\Features\Cabinet\Requests\UpdateProfileRequest;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Notifications\PasswordChangedNotification;
+use App\Features\Cabinet\Notifications\PasswordChangedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
