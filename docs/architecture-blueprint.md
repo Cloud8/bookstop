@@ -617,50 +617,40 @@ Phase 9 is split into 2 sessions.
 
 ---
 
-## Phase 10 — Analytics & Event Tracking
+## Phase 10 — Analytics (Google Analytics 4)
 
-### Schema
+No backend code, no database schema. Analytics is handled entirely by Google Analytics 4 via client-side script tags and `gtag()` calls.
 
-**AnalyticsEvent** (`analytics_events`)
+### Implementation
 
-| Column | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| `id` | UNSIGNED BIGINT AUTO_INCREMENT | NO | — | PK |
-| `session_id` | VARCHAR(255) | YES | NULL | Anonymous session identifier |
-| `event` | VARCHAR(50) | NO | — | Event name (e.g. page_view, book_add_to_cart) |
-| `payload` | JSON | YES | NULL | Event-specific data |
-| `ip_address` | VARCHAR(45) | YES | NULL | Client IP |
-| `user_agent` | VARCHAR(500) | YES | NULL | Browser user agent |
-| `created_at` | TIMESTAMP | YES | NULL | Laravel timestamp |
+**Global script** — added once to `resources/views/layouts/app.blade.php` in `<head>`:
 
-Note: No `updated_at` — events are immutable.
+```html
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google_analytics.id') }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ config('services.google_analytics.id') }}');
+</script>
+```
 
-**Indexes:**
-- PRIMARY KEY (`id`)
-- INDEX `analytics_events_event_index` (`event`)
-- INDEX `analytics_events_created_at_index` (`created_at`)
-- INDEX `analytics_events_session_id_index` (`session_id`)
+GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and exposed via `config/services.php`. The script is only rendered when the ID is set (skipped in local/test environments).
 
-**Foreign keys:** none (no user_id — privacy by design)
+**Custom events** — added via `@push('scripts')` or inline Alpine.js in relevant Blade views:
 
-### Routes
+| Event | Where | Trigger |
+|-------|-------|---------|
+| `add_to_cart` | `books/show.blade.php` | Add to cart button click |
+| `begin_checkout` | `cart/index.blade.php` | Checkout button click |
+| `purchase` | `checkout/success.blade.php` | On page load when order is paid |
+| `file_download` | `cabinet/library.blade.php` | Download button click |
 
-| Method | URI | Controller@method | Middleware |
-|--------|-----|-------------------|------------|
-| POST | `/analytics/event` | AnalyticsEventController@store | web, throttle:analytics |
-| GET | `/admin/analytics` | Admin\AnalyticsController@index | web, auth, admin |
+### No backend changes
 
-### Classes
-
-| Type | Name | Responsibility |
-|------|------|----------------|
-| Migration | 2026_03_20_000010_create_analytics_events_table | Create analytics_events table |
-| Model | AnalyticsEvent | Eloquent model for analytics events (no updated_at) |
-| Controller | AnalyticsEventController | Receive and queue analytics events from frontend |
-| Controller | Admin\AnalyticsController | Render admin analytics dashboard with aggregated stats |
-| Request | StoreAnalyticsEventRequest | Validate event name (from allowed list) and payload |
-| Job | RecordAnalyticsEvent | Queue: persist analytics event to database |
-| Service | AnalyticsService | Aggregate queries: page views, funnel, top books, download counts |
+- No migration, model, controller, job, or service needed.
+- Page views, sessions, traffic sources, funnels, and top pages are tracked automatically by GA4.
+- Ecommerce funnel (detail → cart → checkout → purchase) is built in GA4 reports using the standard events above.
 
 ---
 
@@ -978,11 +968,11 @@ Note: Laravel's default migrations (users, password_reset_tokens, sessions, cach
 
 ### Phase 10 — Analytics
 
-59. Analytics events are queued (not written synchronously) to avoid impacting page load.
-60. No personal data (user_id, email) is stored in analytics_events — session-based identifiers only.
-61. Allowed event names are validated against a whitelist defined in `config/bookshop.php`.
-62. Admin analytics dashboard shows: top pages (7/30 days), funnel (detail -> cart -> checkout -> paid), top books by add-to-cart and purchase, download counts per book.
-63. Analytics event endpoint is rate-limited separately from other routes.
+59. Analytics uses Google Analytics 4 — no backend tables, controllers, or jobs.
+60. GA Measurement ID is stored in `.env` as `GOOGLE_ANALYTICS_ID` and read via `config/services.php`. Script is not rendered when the value is empty (local/test environments).
+61. Standard GA4 events tracked: `add_to_cart`, `begin_checkout`, `purchase`, `file_download`.
+62. Page views, sessions, funnels, and top-content reports are provided by GA4 out of the box.
+63. No personal data is sent to GA4 beyond what the default gtag configuration collects.
 
 ### Phase 11 — Admin Blog & Static Pages
 
