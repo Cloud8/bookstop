@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Features\Admin\Controllers\BookController as AdminBookController;
 use App\Features\Admin\Controllers\DashboardController;
+use App\Features\Admin\Controllers\PostController as AdminPostController;
 use App\Features\Auth\Controllers\OAuthController;
 use App\Features\Blog\Controllers\PostController;
 use App\Features\Cabinet\Controllers\CabinetController;
@@ -107,6 +108,14 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('/books/{book}', [AdminBookController::class, 'destroy'])->name('books.destroy');
     Route::patch('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
     Route::patch('/books/{book}/toggle-featured', [AdminBookController::class, 'toggleFeatured'])->name('books.toggle-featured');
+
+    Route::get('/posts', [AdminPostController::class, 'index'])->name('posts.index');
+    Route::get('/posts/create', [AdminPostController::class, 'create'])->name('posts.create');
+    Route::post('/posts', [AdminPostController::class, 'store'])->name('posts.store');
+    Route::get('/posts/{post}/edit', [AdminPostController::class, 'edit'])->name('posts.edit');
+    Route::put('/posts/{post}', [AdminPostController::class, 'update'])->name('posts.update');
+    Route::delete('/posts/{post}', [AdminPostController::class, 'destroy'])->name('posts.destroy');
+    Route::patch('/posts/{post}/toggle-status', [AdminPostController::class, 'toggleStatus'])->name('posts.toggle-status');
 });
 
 require __DIR__.'/auth.php';

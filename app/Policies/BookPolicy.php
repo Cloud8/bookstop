@@ -10,11 +10,15 @@ use Illuminate\Auth\Access\Response;
 
 class BookPolicy
 {
+    /**
+     * Check that the user owns the book and access has not been revoked (Rule 81).
+     */
     protected function isUserOwner(User $user, Book $book): bool
     {
         return $user
             ->userBooks()
             ->where('book_id', $book->id)
+            ->whereNull('revoked_at')
             ->exists();
     }
 

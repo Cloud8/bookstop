@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\CheckNotBanned;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => EnsureAdmin::class,
+            'check.not.banned' => CheckNotBanned::class,
         ]);
+
+        $middleware->appendToGroup('web', CheckNotBanned::class);
 
         // Exempt Stripe webhook from CSRF verification (Rule 35 — signature verified inside controller)
         $middleware->validateCsrfTokens(except: [
