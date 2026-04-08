@@ -22,6 +22,7 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+        'audience_id' => env('RESEND_AUDIENCE_ID'),
     ],
 
     'ses' => [
@@ -66,5 +67,7 @@ return [
         'public' => env('STRIPE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
+
+    'google_analytics_id' => env('GOOGLE_ANALYTICS_ID'),
 
 ];

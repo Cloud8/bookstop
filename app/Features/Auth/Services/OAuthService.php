@@ -8,6 +8,8 @@ use App\Models\OAuthProvider;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Two\User as SocialiteUser;
+use RuntimeException;
+use Throwable;
 
 class OAuthService
 {
@@ -15,6 +17,8 @@ class OAuthService
      * Handle OAuth callback: find or create user, link provider.
      *
      * @return array{action: 'login'|'needs_email', user: ?User, pendingData: ?array<string, mixed>}
+     *
+     * @throws Throwable
      */
     public function handleCallback(string $provider, SocialiteUser $socialiteUser): array
     {
@@ -79,6 +83,8 @@ class OAuthService
      * Complete registration for OAuth user without email.
      *
      * @param  array<string, mixed>  $pendingData
+     *
+     * @throws Throwable
      */
     public function completeRegistration(string $email, array $pendingData): User
     {
@@ -110,6 +116,8 @@ class OAuthService
 
     /**
      * Link an OAuth provider to the currently authenticated user via Socialite token.
+     *
+     * @throws RuntimeException if the provider is already linked to another user
      */
     public function linkProvider(User $user, string $provider, SocialiteUser $socialiteUser): OAuthProvider
     {
@@ -119,7 +127,7 @@ class OAuthService
             ->first();
 
         if ($existing && $existing->user_id !== $user->id) {
-            throw new \RuntimeException('Этот аккаунт уже привязан к другому пользователю.');
+            throw new RuntimeException('Этот аккаунт уже привязан к другому пользователю.');
         }
 
         return OAuthProvider::firstOrCreate(
@@ -136,6 +144,8 @@ class OAuthService
      * Unlink an OAuth provider from the user's account.
      *
      * Rule 45: cannot unlink last provider if user has no password.
+     *
+     * @throws RuntimeException if unlinking would leave the user with no login method
      */
     public function unlinkProvider(User $user, string $provider): void
     {
@@ -149,7 +159,7 @@ class OAuthService
         $providerCount = $user->oauthProviders()->count();
 
         if (! $hasPassword && $providerCount <= 1) {
-            throw new \RuntimeException('Нельзя отвязать единственный способ входа без установленного пароля.');
+            throw new RuntimeException('Нельзя отвязать единственный способ входа без установленного пароля.');
         }
 
         $record->delete();

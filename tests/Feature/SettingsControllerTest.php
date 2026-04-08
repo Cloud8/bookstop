@@ -5,16 +5,30 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Features\Cabinet\Notifications\PasswordChangedNotification;
+use App\Features\Newsletter\Services\NewsletterService;
 use App\Models\OAuthProvider;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class SettingsControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // NewsletterService depends on Resend\Client which requires an API key.
+        // Mock it so SettingsController can be resolved in tests without a real key.
+        $this->mock(NewsletterService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('addContact')->byDefault();
+            $mock->shouldReceive('removeContact')->byDefault();
+        });
+    }
 
     // ─── Profile update ────────────────────────────────────────────────────────
 
@@ -143,7 +157,9 @@ class SettingsControllerTest extends TestCase
         $user = User::factory()->create(['password' => Hash::make('secret')]);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertRedirectToRoute('cabinet.settings');
         $this->assertDatabaseMissing('oauth_providers', [
@@ -160,7 +176,9 @@ class SettingsControllerTest extends TestCase
         $user = User::factory()->create(['password' => null]);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertSessionHasErrors('provider');
         $this->assertDatabaseHas('oauth_providers', [
@@ -178,7 +196,9 @@ class SettingsControllerTest extends TestCase
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'facebook', 'provider_id' => 'fb-id-999']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertRedirectToRoute('cabinet.settings');
         $this->assertDatabaseMissing('oauth_providers', [
@@ -196,7 +216,9 @@ class SettingsControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'nonexistent']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'nonexistent']));
 
         $response->assertNotFound();
     }

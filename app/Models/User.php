@@ -22,6 +22,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $password
  * @property UserRole $role
  * @property bool $newsletter_consent
+ * @property Carbon|null $banned_at
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -62,12 +63,18 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'role' => UserRole::class,
             'newsletter_consent' => 'boolean',
+            'banned_at' => 'datetime',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
     }
 
     public function sendEmailVerificationNotification(): void

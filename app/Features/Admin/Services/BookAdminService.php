@@ -11,6 +11,8 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
+use Throwable;
 
 class BookAdminService
 {
@@ -21,6 +23,8 @@ class BookAdminService
      * the epub upload job if an epub file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in rubles)
+     *
+     * @throws Throwable
      */
     public function createBook(
         array $data,
@@ -76,7 +80,8 @@ class BookAdminService
      *
      * @param  array<string, mixed>  $data  Validated form data (price in rubles)
      *
-     * @throws \InvalidArgumentException|\Throwable if Rule 17 is violated (cannot unpublish a book with purchases)
+     * @throws InvalidArgumentException
+     * @throws Throwable if Rule 17 is violated (cannot unpublish a book with purchases)
      */
     public function updateBook(
         Book $book,
@@ -89,12 +94,12 @@ class BookAdminService
 
         // Rule 17: a published book that has purchases cannot be unpublished.
         if ($book->status === BookStatus::Published && $newStatus === BookStatus::Draft && $book->hasAnyPurchases()) {
-            throw new \InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
+            throw new InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
         }
 
         // Cannot publish a book that has no epub file.
         if ($newStatus === BookStatus::Published && $epub === null && $book->epub_path === null) {
-            throw new \InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+            throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
         }
 
         return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
@@ -140,18 +145,18 @@ class BookAdminService
      * Rule 17: cannot unpublish a book that has purchases.
      * Cannot publish a book without an epub file.
      *
-     * @throws \InvalidArgumentException on rule violation
+     * @throws InvalidArgumentException on rule violation
      */
     public function toggleStatus(Book $book): Book
     {
         if ($book->status === BookStatus::Published) {
             if ($book->hasAnyPurchases()) {
-                throw new \InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
+                throw new InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
             }
             $book->status = BookStatus::Draft;
         } else {
             if ($book->epub_path === null) {
-                throw new \InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+                throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
             }
             $book->status = BookStatus::Published;
         }

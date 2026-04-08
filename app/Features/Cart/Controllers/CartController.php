@@ -10,6 +10,7 @@ use App\Models\Book;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use RuntimeException;
 
 class CartController extends Controller
 {
@@ -33,7 +34,7 @@ class CartController extends Controller
 
         try {
             $this->cartService->addItem($book, $user, $sessionId);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             return back()->withErrors(['cart' => $e->getMessage()]);
         }
 

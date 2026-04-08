@@ -26,4 +26,11 @@ class UserBookFactory extends Factory
             'granted_at' => now(),
         ];
     }
+
+    public function revoked(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'revoked_at' => now(),
+        ]);
+    }
 }
