@@ -157,7 +157,9 @@ class SettingsControllerTest extends TestCase
         $user = User::factory()->create(['password' => Hash::make('secret')]);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertRedirectToRoute('cabinet.settings');
         $this->assertDatabaseMissing('oauth_providers', [
@@ -174,7 +176,9 @@ class SettingsControllerTest extends TestCase
         $user = User::factory()->create(['password' => null]);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertSessionHasErrors('provider');
         $this->assertDatabaseHas('oauth_providers', [
@@ -192,7 +196,9 @@ class SettingsControllerTest extends TestCase
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'google']);
         OAuthProvider::factory()->create(['user_id' => $user->id, 'provider' => 'facebook', 'provider_id' => 'fb-id-999']);
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'google']));
 
         $response->assertRedirectToRoute('cabinet.settings');
         $this->assertDatabaseMissing('oauth_providers', [
@@ -210,7 +216,9 @@ class SettingsControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'nonexistent']));
+        $response = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('cabinet.settings.oauth.unlink', ['provider' => 'nonexistent']));
 
         $response->assertNotFound();
     }

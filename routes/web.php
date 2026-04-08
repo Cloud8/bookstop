@@ -100,7 +100,7 @@ Route::middleware(['auth', 'verified'])->prefix('cabinet')->name('cabinet.')->gr
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/settings/newsletter', [SettingsController::class, 'toggleNewsletter'])->name('settings.newsletter');
     Route::post('/settings/oauth/{provider}', [SettingsController::class, 'linkProvider'])->name('settings.oauth.link');
-    Route::delete('/settings/oauth/{provider}', [SettingsController::class, 'unlinkProvider'])->name('settings.oauth.unlink');
+    Route::delete('/settings/oauth/{provider}', [SettingsController::class, 'unlinkProvider'])->middleware('password.confirm')->name('settings.oauth.unlink');
 });
 
 // Admin panel (auth + verified + admin role required)
