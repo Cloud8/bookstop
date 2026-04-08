@@ -72,9 +72,7 @@ class StripePaymentProvider implements PaymentProvider
                 'payment_intent' => $session->payment_intent,
             ],
             'status' => 'pending',
-            'expires_at' => $session->expires_at !== null
-                ? Carbon::createFromTimestamp($session->expires_at)
-                : null,
+            'expires_at' => Carbon::createFromTimestamp($session->expires_at),
         ]);
 
         return [
