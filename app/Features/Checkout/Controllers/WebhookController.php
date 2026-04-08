@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
+use UnexpectedValueException;
 
 class WebhookController extends Controller
 {
@@ -41,7 +42,7 @@ class WebhookController extends Controller
             ]);
 
             return response('Signature verification failed', 400);
-        } catch (\UnexpectedValueException $e) {
+        } catch (UnexpectedValueException $e) {
             Log::warning('Stripe webhook invalid payload', [
                 'error' => $e->getMessage(),
             ]);

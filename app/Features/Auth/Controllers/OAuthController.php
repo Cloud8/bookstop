@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -54,7 +55,7 @@ class OAuthController extends Controller
 
             try {
                 $this->oauthService->linkProvider($authUser, $provider, $socialUser);
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 return redirect()->route('cabinet.settings')
                     ->withErrors(['provider' => $e->getMessage()]);
             }

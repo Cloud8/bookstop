@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class BookController extends Controller
 {
@@ -58,7 +59,7 @@ class BookController extends Controller
                 $request->file('cover_thumb'),
                 $request->file('epub'),
             );
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return redirect()->route('admin.books.edit', $book)
                 ->withErrors(['status' => $e->getMessage()]);
         }
@@ -86,7 +87,7 @@ class BookController extends Controller
     {
         try {
             $this->bookAdminService->toggleStatus($book);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
 

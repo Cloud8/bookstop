@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
 class SettingsController extends Controller
@@ -95,7 +96,7 @@ class SettingsController extends Controller
 
         try {
             $this->oauthService->unlinkProvider($user, $provider);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             return redirect()->route('cabinet.settings')
                 ->withErrors(['provider' => $e->getMessage()]);
         }

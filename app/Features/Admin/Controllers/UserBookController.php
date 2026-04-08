@@ -11,6 +11,7 @@ use App\Models\Book;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Http\RedirectResponse;
+use InvalidArgumentException;
 
 class UserBookController extends Controller
 {
@@ -36,7 +37,7 @@ class UserBookController extends Controller
 
         try {
             $this->userBookAdminService->grant($user, $book, $request->validated('reason'));
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
 
