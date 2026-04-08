@@ -7,6 +7,7 @@ namespace App\Features\Admin\Services;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Password;
+use InvalidArgumentException;
 
 class UserAdminService
 {
@@ -19,7 +20,7 @@ class UserAdminService
     public function ban(User $user): void
     {
         if ($user->isAdmin()) {
-            throw new \InvalidArgumentException('Нельзя заблокировать администратора.');
+            throw new InvalidArgumentException('Нельзя заблокировать администратора.');
         }
 
         $user->banned_at = now();

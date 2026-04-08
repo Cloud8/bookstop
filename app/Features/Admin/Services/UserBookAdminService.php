@@ -8,6 +8,7 @@ use App\Models\Book;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class UserBookAdminService
 {
@@ -42,7 +43,7 @@ class UserBookAdminService
             ->exists();
 
         if ($existing) {
-            throw new \InvalidArgumentException('Пользователь уже владеет этой книгой.');
+            throw new InvalidArgumentException('Пользователь уже владеет этой книгой.');
         }
 
         $userBook = UserBook::query()->create([
