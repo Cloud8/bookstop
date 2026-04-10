@@ -27,7 +27,13 @@ class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
 {
     public function __construct(private readonly OrderService $orderService)
     {
-        Stripe::setApiKey(config('services.stripe.secret'));
+        $secret = config('services.stripe.secret');
+        $webhookSecret = config('services.stripe.webhook_secret');
+
+        throw_if(empty($secret), RuntimeException::class, 'STRIPE_SECRET is not configured.');
+        throw_if(empty($webhookSecret), RuntimeException::class, 'STRIPE_WEBHOOK_SECRET is not configured.');
+
+        Stripe::setApiKey($secret);
     }
 
     /**
