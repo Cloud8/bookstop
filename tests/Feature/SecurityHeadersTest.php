@@ -45,6 +45,7 @@ class SecurityHeadersTest extends TestCase
         $this->assertNotNull($csp);
         $this->assertStringContainsString("default-src 'self'", $csp);
         $this->assertStringContainsString('https://www.googletagmanager.com', $csp);
+        $this->assertStringContainsString('https://fonts.bunny.net', $csp);
         $this->assertStringContainsString("frame-ancestors 'none'", $csp);
     }
 
