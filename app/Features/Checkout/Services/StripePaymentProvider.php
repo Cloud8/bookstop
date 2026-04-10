@@ -29,7 +29,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     /**
      * @throws Throwable
      */
-    public function __construct(private readonly OrderService $orderService)
+    public function __construct(private OrderService $orderService)
     {
         $secret = config('services.stripe.secret');
         $webhookSecret = config('services.stripe.webhook_secret');
