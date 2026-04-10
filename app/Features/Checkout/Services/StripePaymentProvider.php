@@ -4,23 +4,45 @@ declare(strict_types=1);
 
 namespace App\Features\Checkout\Services;
 
+use App\Enums\OrderStatus;
 use App\Features\Checkout\Contracts\PaymentProvider;
+use App\Features\Checkout\Contracts\SupportsWebhooks;
+use App\Features\Checkout\Jobs\ProcessPaymentConfirmation;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderTransaction;
 use App\Models\User;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\SignatureVerificationException;
 use Stripe\Stripe;
+use Stripe\Webhook;
+use Throwable;
+use UnexpectedValueException;
 
-class StripePaymentProvider implements PaymentProvider
+readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
 {
-    public function __construct()
+    /**
+     * @throws Throwable
+     */
+    public function __construct(private OrderService $orderService)
     {
-        Stripe::setApiKey(config('services.stripe.secret'));
+        $secret = config('services.stripe.secret');
+        $webhookSecret = config('services.stripe.webhook_secret');
+
+        throw_if(empty($secret), RuntimeException::class, 'STRIPE_SECRET is not configured.');
+        throw_if(empty($webhookSecret), RuntimeException::class, 'STRIPE_WEBHOOK_SECRET is not configured.');
+
+        Stripe::setApiKey($secret);
     }
 
     /**
-     * Create a Stripe Checkout session for the given order.
+     * Create a Stripe Checkout session for the given order and persist an
+     * OrderTransaction record with all provider-specific data.
      *
      * @return array{id: string, url: string}
      *
@@ -28,7 +50,6 @@ class StripePaymentProvider implements PaymentProvider
      */
     public function createSession(Order $order, User $user): array
     {
-
         if (! $order->relationLoaded('items')) {
             $order->load('items.book');
         }
@@ -56,12 +77,157 @@ class StripePaymentProvider implements PaymentProvider
         ]);
 
         if ($session->url === null) {
-            throw new \RuntimeException('Stripe did not return a checkout URL for session '.$session->id);
+            throw new RuntimeException('Stripe did not return a checkout URL for session '.$session->id);
         }
+
+        // Persist provider-specific data in order_transactions so it never leaks
+        // into the orders table (business entity stays provider-agnostic).
+        OrderTransaction::query()->create([
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'provider_data' => [
+                'session_id' => $session->id,
+                'payment_intent' => $session->payment_intent,
+            ],
+            'status' => 'pending',
+            'expires_at' => Carbon::createFromTimestamp($session->expires_at),
+        ]);
 
         return [
             'id' => $session->id,
             'url' => $session->url,
         ];
+    }
+
+    /**
+     * Handle an incoming Stripe webhook event.
+     *
+     * Rule 35: signature is verified on every request.
+     * Rule 29: webhook is the source of truth for payment confirmation.
+     * Rule 30: idempotency via order_transactions — skip if already paid.
+     *
+     * @throws SignatureVerificationException
+     * @throws UnexpectedValueException|Throwable
+     */
+    public function handleWebhook(string $payload, string $signature): void
+    {
+        $event = Webhook::constructEvent(
+            $payload,
+            $signature,
+            config('services.stripe.webhook_secret'),
+        );
+
+        Log::info('Stripe webhook received', ['type' => $event->type]);
+
+        if ($event->type === 'checkout.session.completed') {
+            /** @var Session $session */
+            $session = $event->data->object;
+            $this->handleSessionCompleted($session);
+        }
+
+        if ($event->type === 'checkout.session.expired') {
+            /** @var Session $session */
+            $session = $event->data->object;
+            $this->handleSessionExpired($session);
+        }
+    }
+
+    /**
+     * Process a completed Stripe Checkout session.
+     * Dispatches ProcessPaymentConfirmation when payment is confirmed.
+     */
+    private function handleSessionCompleted(Session $session): void
+    {
+        $stripeSessionId = $session->id;
+        $paymentIntentId = is_string($session->payment_intent)
+            ? $session->payment_intent
+            : (string) ($session->payment_intent->id ?? '');
+
+        // Look up order via order_transactions (provider-agnostic approach)
+        $order = $this->orderService->findByProviderSession('stripe', $stripeSessionId);
+
+        if ($order === null) {
+            Log::warning('Stripe webhook: order not found for session', [
+                'session_id' => $stripeSessionId,
+            ]);
+
+            return;
+        }
+
+        // checkout.session.completed fires for all payment methods, including async ones
+        // (bank transfers, OXXO, etc.) where payment_status is still 'unpaid' at the time
+        // the session completes. For those, funds arrive later via async_payment_succeeded.
+        // We only grant books when payment is confirmed — skip anything not yet paid.
+        if ($session->payment_status !== 'paid') {
+            Log::info('Stripe webhook: session completed but payment not yet confirmed', [
+                'order_id' => $order->id,
+                'payment_status' => $session->payment_status,
+                'session_id' => $stripeSessionId,
+            ]);
+
+            return;
+        }
+
+        // Rule 30: skip dispatch if already paid — defence-in-depth against duplicate webhooks
+        if ($order->status === OrderStatus::Paid) {
+            Log::info('Stripe webhook: order already paid, skipping', [
+                'order_id' => $order->id,
+                'session_id' => $stripeSessionId,
+            ]);
+
+            return;
+        }
+
+        Log::info('Stripe webhook: dispatching ProcessPaymentConfirmation', [
+            'order_id' => $order->id,
+            'session_id' => $stripeSessionId,
+        ]);
+
+        // Dispatch queued job — Rule 29, 30, 31
+        ProcessPaymentConfirmation::dispatch(
+            $order->id,
+            $paymentIntentId,
+            $stripeSessionId,
+        );
+    }
+
+    /**
+     * Process an expired Stripe Checkout session.
+     * Marks the transaction and order as failed if still pending.
+     *
+     * @throws Throwable
+     */
+    private function handleSessionExpired(Session $session): void
+    {
+        $stripeSessionId = $session->id;
+
+        $transaction = $this->orderService->findTransactionByProviderData('stripe', 'session_id', $stripeSessionId);
+
+        if ($transaction === null) {
+            Log::warning('Stripe webhook: transaction not found for expired session', [
+                'session_id' => $stripeSessionId,
+            ]);
+
+            return;
+        }
+
+        // Only transition pending transactions — avoid overwriting already-settled states
+        if ($transaction->status === 'pending') {
+            DB::transaction(function () use ($transaction, $stripeSessionId): void {
+                $transaction->status = 'expired';
+                $transaction->save();
+
+                $order = $transaction->order;
+                if ($order !== null && $order->status === OrderStatus::Pending) {
+                    $order->status = OrderStatus::Failed;
+                    $order->save();
+
+                    Log::info('Stripe webhook: session expired, order marked failed', [
+                        'order_id' => $order->id,
+                        'session_id' => $stripeSessionId,
+                    ]);
+                }
+            });
+        }
     }
 }
