@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Mail;
 
 class SendOrderConfirmationEmail implements ShouldQueue
 {
+    /** Queue this listener should be dispatched to. */
+    public string $queue = 'emails';
+
     public function handle(OrderPaid $event): void
     {
         $order = $event->order;

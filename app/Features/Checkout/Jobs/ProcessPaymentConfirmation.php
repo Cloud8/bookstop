@@ -29,7 +29,9 @@ class ProcessPaymentConfirmation implements ShouldQueue
         public readonly int $orderId,
         public readonly string $paymentIntentId,
         public readonly string $sessionId,
-    ) {}
+    ) {
+        $this->onQueue('payments');
+    }
 
     public function handle(): void
     {
