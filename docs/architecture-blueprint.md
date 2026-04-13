@@ -866,12 +866,15 @@ Single migration replacing/adding atomic indexes:
 - `download_logs`: ADD `index(book_id)`
 - `users`: ADD `index(role)`
 
-#### 12.3 — Laravel Horizon (backend)
+#### 12.3 — Laravel Horizon + Telescope (backend)
 - Install `laravel/horizon`
 - Configure queues: `default`, `payments`, `uploads`, `emails`
-- Horizon dashboard protected: accessible to `admin` role only
-- Docker: replace `queue:work` container command with `horizon`
-- Telescope: install `laravel/telescope`, restrict to `local`/`dev` environments only
+- Assign jobs to correct queues: `ProcessPaymentConfirmation` → `payments`, `SendOrderConfirmationEmail` → `emails`, `ProcessBookFileUpload` → `uploads`, `PasswordChangedNotification` → `default`
+- Horizon dashboard protected: accessible to `admin` role only via gate in `AppServiceProvider`
+- Docker: replace `queue:work` container command with `horizon` in `docker-compose.dev.yml`
+- Install `laravel/telescope`, restrict to `local` environment only (`APP_ENV=local`)
+- Telescope dashboard protected: accessible to `admin` role only
+- Telescope migrations run only in local env (do not commit telescope migrations to prod)
 
 #### 12.4 — Automated Backups (backend)
 - Install `spatie/laravel-backup`

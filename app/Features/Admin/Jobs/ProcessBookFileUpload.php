@@ -30,7 +30,9 @@ class ProcessBookFileUpload implements ShouldQueue
         public readonly int $bookId,
         public readonly string $tempPath,
         public readonly string $originalExtension,
-    ) {}
+    ) {
+        $this->onQueue('uploads');
+    }
 
     /**
      * Execute the job.
