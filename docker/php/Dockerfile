@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zip \
         libxml2-dev \
         libicu-dev \
+        default-mysql-client \
     && docker-php-ext-install pdo_mysql zip xml dom intl opcache bcmath pcntl \
     && pecl install redis \
     && docker-php-ext-enable redis \
