@@ -42,7 +42,7 @@ return [
              * For a complete list of available customization options, see https://github.com/spatie/db-dumper
              */
             'databases' => [
-                env('DB_CONNECTION', 'mysql'),
+                env('BACKUP_DB_CONNECTION', 'mysql'),
             ],
         ],
 
@@ -148,8 +148,9 @@ return [
          * Supported: 'none', 'default', 'aes128', 'aes192', 'aes256'
          *
          * When set to 'default', we'll use AES-256 if available on your system.
+         * When password is null, encryption is silently skipped regardless of this setting.
          */
-        'encryption' => 'default',
+        'encryption' => env('BACKUP_ARCHIVE_PASSWORD') ? 'default' : 'none',
 
         /*
          * After creating the zip, verify it can be opened and contains files.
