@@ -34,7 +34,7 @@ class SecurityHeaders
                 "default-src 'self'",
                 "script-src 'self' 'unsafe-inline'{$unsafeEval} https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com{$viteHttp}",
                 "style-src 'self' 'unsafe-inline' https://fonts.bunny.net{$viteHttp}",
-                "img-src 'self' data: {$s3PublicOrigin}",
+                "img-src 'self' data: {$s3PublicOrigin} https://www.google-analytics.com https://www.googletagmanager.com",
                 "font-src 'self' https://fonts.bunny.net{$viteHttp}",
                 "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://api.stripe.com{$viteConnect}",
                 "frame-ancestors 'none'",

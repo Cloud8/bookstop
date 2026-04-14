@@ -7,16 +7,6 @@
 
     @stack('head')
 
-    @if(config('services.google_analytics_id'))
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google_analytics_id') }}"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '{{ config('services.google_analytics_id') }}');
-    </script>
-    @endif
-
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
@@ -33,6 +23,8 @@
     </main>
 
     @include('partials.footer')
+
+    <x-cookie-consent />
 
 </body>
 </html>
