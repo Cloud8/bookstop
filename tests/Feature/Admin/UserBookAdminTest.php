@@ -118,6 +118,34 @@ class UserBookAdminTest extends TestCase
             ->assertSessionHasErrors('book_slug');
     }
 
+    public function test_admin_can_grant_book_to_user_with_revoked_record(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        UserBook::factory()->revoked()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->post("/admin/users/{$user->id}/grant-book", [
+                'book_slug' => $book->slug,
+                'reason' => 'Восстановление доступа',
+            ])
+            ->assertRedirect();
+
+        $userBook = UserBook::query()
+            ->where('user_id', $user->id)
+            ->where('book_id', $book->id)
+            ->firstOrFail();
+
+        $this->assertNull($userBook->revoked_at);
+        $this->assertNull($userBook->order_id);
+        $this->assertDatabaseCount('user_books', 1);
+    }
+
     public function test_non_admin_cannot_grant_book(): void
     {
         $regularUser = User::factory()->create();

@@ -37,6 +37,7 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
+        // Admin intentionally sees all user_books including revoked entries — do not add whereNull('revoked_at') here.
         $user->load(['orders.items.book', 'userBooks.book']);
 
         $books = Book::query()->ordered()->get(['id', 'title', 'slug']);

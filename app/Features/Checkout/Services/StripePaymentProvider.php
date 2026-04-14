@@ -215,6 +215,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             $order->id,
             $paymentIntentId,
             $stripeSessionId,
+            $this->getName(),
         );
     }
 

@@ -29,6 +29,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
         public readonly int $orderId,
         public readonly string $paymentIntentId,
         public readonly string $sessionId,
+        public readonly string $provider = 'stripe',
     ) {
         $this->onQueue('payments');
     }
@@ -66,7 +67,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
             // so the provider-specific data stays in order_transactions, not on orders.
             $transaction = OrderTransaction::query()
                 ->where('order_id', $this->orderId)
-                ->where('provider', 'stripe')
+                ->where('provider', $this->provider)
                 ->whereRaw("json_extract(provider_data, '$.session_id') = ?", [$this->sessionId])
                 ->first();
 
