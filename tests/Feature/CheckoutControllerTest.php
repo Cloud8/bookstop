@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Models\OrderTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class CheckoutControllerTest extends TestCase
@@ -56,14 +57,14 @@ class CheckoutControllerTest extends TestCase
                     return $this->session;
                 }
 
-                public function extractReturnSessionId(\Illuminate\Http\Request $request): ?string
+                public function extractReturnSessionId(Request $request): ?string
                 {
                     $value = $request->query('session_id');
 
                     return is_string($value) ? $value : null;
                 }
 
-                public function handleReturn(\Illuminate\Http\Request $request, Order $order): void {}
+                public function handleReturn(Request $request, Order $order): void {}
             };
         });
     }
@@ -191,16 +192,22 @@ class CheckoutControllerTest extends TestCase
         $this->app->bind(PaymentProvider::class, function () {
             return new class implements PaymentProvider
             {
-                public function getName(): string { return 'stripe'; }
+                public function getName(): string
+                {
+                    return 'stripe';
+                }
 
                 public function createSession(Order $order, User $user): array
                 {
                     throw new PaymentException('Payment provider error');
                 }
 
-                public function extractReturnSessionId(\Illuminate\Http\Request $request): ?string { return null; }
+                public function extractReturnSessionId(Request $request): ?string
+                {
+                    return null;
+                }
 
-                public function handleReturn(\Illuminate\Http\Request $request, Order $order): void {}
+                public function handleReturn(Request $request, Order $order): void {}
             };
         });
 
