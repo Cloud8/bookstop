@@ -2,7 +2,7 @@
 
 <x-seo
     title="Блог"
-    description="Статьи, новости и обзоры от Жасмин Майер."
+    description="Статьи, новости и обзоры."
 />
 
 @section('content')
