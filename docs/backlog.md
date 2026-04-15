@@ -14,6 +14,14 @@
 ### Конфиг enabled для OAuth-провайдеров
 Сейчас работает только Google OAuth, но UI кабинета может отображать кнопки для других провайдеров (GitHub, VK и т.д.). Добавить конфиг `services.{provider}.enabled` (bool), чтобы можно было оперативно включать и отключать конкретный провайдер без правок кода. Затронет: `config/services.php`, `OAuthController`, Blade-шаблоны кабинета.
 
+### Валюта вынесена в конфиг
+Сейчас `RUB` и `₽` хардкодом разбросаны по ~25 местам: миграции (`default('RUB')`), сервисы (`OrderService`, `StripePaymentProvider`, `BookAdminService`), 14 Blade-шаблонов (символ `₽`), GA4-события и JSON-LD (`priceCurrency`), фабрики и тест-фикстуры. Вынести в `config/shop.php`:
+```php
+'currency_code'   => env('SHOP_CURRENCY', 'RUB'),   // ISO 4217
+'currency_symbol' => env('SHOP_CURRENCY_SYMBOL', '₽'),
+```
+Заменить все хардкоды на `config('shop.currency_code')` / `config('shop.currency_symbol')`.
+
 ### Конфиг enabled для платёжных систем
 Добавить флаг `config('payments.providers.stripe.enabled')` (и аналогичные для будущих провайдеров). При `enabled = false` — скрывать кнопку оплаты и возвращать понятную ошибку. Позволит оперативно отключить провайдер без деплоя. Затронет: `config/payments.php` (новый файл), `CheckoutController`, Blade-шаблоны оплаты.
 
