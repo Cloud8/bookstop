@@ -1,0 +1,114 @@
+name: Deploy
+
+# ─────────────────────────────────────────────────────────────────────────────
+# КАК РАБОТАЕТ ЭТОТ WORKFLOW
+#
+# Триггер: запускается автоматически ПОСЛЕ того, как workflow "CI" завершился
+# успешно на ветке master. То есть порядок всегда такой:
+#
+#   git push master
+#       → CI запускается (ci.yml): lint → static analysis → tests
+#       → если CI прошёл: Deploy запускается (этот файл)
+#       → если CI упал: Deploy не запускается вообще
+#
+# Благодаря workflow_run не нужно держать тесты и деплой в одном файле.
+# Разделение делает логи чище и позволяет перезапускать деплой отдельно.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_run:
+    workflows: ["CI"]   # должно совпадать с полем `name:` в ci.yml
+    types: [completed]
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to production VPS
+    runs-on: ubuntu-latest
+
+    # ── Условие ───────────────────────────────────────────────────────────────
+    # Запускаем деплой только если CI завершился успешно.
+    # Без этой проверки деплой запускался бы и при падении CI.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # ── SSH на VPS и деплой ─────────────────────────────────────────────────
+      # appleboy/ssh-action подключается к VPS через SSH и выполняет скрипт.
+      # Все переменные берутся из GitHub Secrets (Settings → Secrets → Actions).
+      #
+      # Нужные Secrets:
+      #   VPS_HOST    — IP-адрес или hostname VPS (например: 65.109.12.34)
+      #   VPS_USER    — пользователь SSH (deploy)
+      #   VPS_SSH_KEY — приватный SSH-ключ (содержимое ~/.ssh/id_rsa)
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # set -e: любая упавшая команда немедленно прерывает скрипт.
+          # Это предотвращает частичный деплой (например, контейнеры обновились,
+          # но миграции не запустились).
+          script: |
+            set -e
+            cd /var/www/bookshop
+
+            # ── 1. Получить новый код ──────────────────────────────────────────
+            # Тянем последний коммит из master.
+            # На VPS нет uncommitted changes — только .env который в .gitignore.
+            git pull origin master
+
+            # ── 2. Включить режим обслуживания ────────────────────────────────
+            # Пока идёт деплой, пользователи видят страницу "Технические работы"
+            # вместо возможных ошибок 500. Файл пишется в storage/ (named volume),
+            # поэтому он переживёт пересборку контейнеров.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan down --retry=5
+
+            # ── 3. Пересобрать образы ─────────────────────────────────────────
+            # Собираем только те сервисы, у которых есть build: (php, nginx,
+            # queue, scheduler). Docker использует build cache — если зависимости
+            # не изменились, composer install и npm build не перезапускаются.
+            # Только слои с изменившимися файлами пересобираются.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              build php nginx queue scheduler
+
+            # ── 4. Перезапустить контейнеры ──────────────────────────────────
+            # up -d запускает/перезапускает контейнеры с новыми образами.
+            # Контейнеры без изменений (db, redis) не трогаются — они
+            # продолжают работать без перерыва.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              up -d
+
+            # ── 5. Запустить миграции ─────────────────────────────────────────
+            # --force обязателен в production (иначе Laravel спрашивает
+            # подтверждение в интерактивном режиме).
+            # Если миграция упала — скрипт прерывается (set -e), artisan up
+            # не вызывается, приложение остаётся в maintenance mode.
+            # Это сигнал для ручного вмешательства, а не тихий сбой.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan migrate --force
+
+            # ── 6. Закэшировать конфиг, роуты, вью ───────────────────────────
+            # В production Laravel не читает .env и файлы конфига при каждом
+            # запросе — использует кэш. Это критично для производительности.
+            # Обязательно вызывать после каждого деплоя, иначе изменения в
+            # config/ или routes/ не применятся.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan config:cache
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan route:cache
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan view:cache
+
+            # ── 7. Выключить режим обслуживания ──────────────────────────────
+            # Приложение снова доступно пользователям.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan up
+
+            # ── 8. Перезапустить Horizon ──────────────────────────────────────
+            # queue:restart не убивает контейнер — он устанавливает флаг в Redis,
+            # по которому Horizon корректно завершает текущие задачи и
+            # перезапускает воркеры с новым кодом. Без этого queue worker
+            # продолжит работать со старым кодом до следующего ручного рестарта.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              exec -T php php artisan queue:restart

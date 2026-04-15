@@ -171,13 +171,16 @@ mkdir -p /etc/bookshop/certs
 2. Hosts: `yourdomain.com`, `*.yourdomain.com`
 3. Validity: 15 years
 4. Скачать **Certificate** и **Private Key**
-5. Загрузить на VPS:
+5. Загрузить на VPS в директорию `docker/nginx/certs/` внутри репозитория:
 
 ```bash
-scp origin.crt deploy@<VPS_IP>:/etc/bookshop/certs/server.crt
-scp origin.key deploy@<VPS_IP>:/etc/bookshop/certs/server.key
-chmod 600 /etc/bookshop/certs/server.key
+# С локальной машины:
+scp origin.crt deploy@<VPS_IP>:/var/www/bookshop/docker/nginx/certs/server.crt
+scp origin.key deploy@<VPS_IP>:/var/www/bookshop/docker/nginx/certs/server.key
 ```
+
+> Файлы в `/docker/nginx/certs/` добавлены в `.gitignore` — в репозиторий не попадут.
+> nginx монтирует их как `/etc/nginx/certs/server.crt` и `server.key` (прописано в `docker-compose.yml`).
 
 **SSL/TLS mode** в Cloudflare → **Full (strict)**
 
@@ -292,54 +295,32 @@ ADULT_GATE_ENABLED=false
 
 ## Шаг 10 — CI/CD (GitHub Actions)
 
-Создать `.github/workflows/deploy.yml`:
+Два workflow-файла уже созданы в репозитории:
 
-```yaml
-name: Deploy
+- `.github/workflows/ci.yml` — lint + static analysis + tests (запускается на каждый push и PR)
+- `.github/workflows/deploy.yml` — деплой на VPS (запускается только после успешного CI на master)
 
-on:
-  push:
-    branches: [master]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-      - run: composer install --no-interaction --prefer-dist
-      - run: cp .env.example .env && php artisan key:generate
-      - run: php artisan test --compact
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /var/www/bookshop
-            git pull origin master
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache php nginx
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T php php artisan migrate --force
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T php php artisan config:cache
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T php php artisan route:cache
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T php php artisan view:cache
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T php php artisan queue:restart
+**Порядок событий при `git push master`:**
+```
+push → CI запускается (ci.yml)
+         ↓ если прошёл
+       Deploy запускается (deploy.yml)
+         → git pull на VPS
+         → artisan down (maintenance mode)
+         → docker compose build (пересборка образов)
+         → docker compose up -d (перезапуск)
+         → artisan migrate --force
+         → artisan config:cache + route:cache + view:cache
+         → artisan up
+         → artisan queue:restart
 ```
 
 **GitHub Secrets** (Settings → Secrets → Actions):
 
 | Secret | Значение |
 |--------|---------|
-| `VPS_HOST` | IP-адрес VPS |
+| `VPS_HOST` | IP-адрес VPS (например: `65.109.12.34`) |
+| `VPS_USER` | `deploy` |
 | `VPS_SSH_KEY` | Приватный SSH-ключ (`cat ~/.ssh/id_rsa`) |
 
 ---
