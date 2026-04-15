@@ -13,7 +13,9 @@
         <div class="bg-surface border border-border-subtle rounded-xl shadow-sm p-8">
 
             {{-- OAuth buttons --}}
+            @if(config('services.google.enabled') || config('services.vk.enabled'))
             <div class="flex flex-col gap-3 mb-6">
+                @if(config('services.google.enabled'))
                 <a
                     href="{{ route('auth.oauth.redirect', 'google') }}"
                     class="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-border-subtle rounded-lg text-sm font-sans font-medium text-text-primary bg-surface hover:bg-surface-muted transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
@@ -26,6 +28,8 @@
                     </svg>
                     Войти через Google
                 </a>
+                @endif
+                @if(config('services.vk.enabled'))
                 <a
                     href="{{ route('auth.oauth.redirect', 'vk') }}"
                     class="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-border-subtle rounded-lg text-sm font-sans font-medium text-text-primary bg-surface hover:bg-surface-muted transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
@@ -35,6 +39,7 @@
                     </svg>
                     Войти через VK
                 </a>
+                @endif
             </div>
 
             <div class="flex items-center gap-3 mb-6">
@@ -42,6 +47,7 @@
                 <span class="text-xs text-text-subtle font-sans">или по email</span>
                 <div class="flex-1 h-px bg-border-subtle"></div>
             </div>
+            @endif
 
             <form method="POST" action="{{ route('register') }}" class="space-y-5">
                 @csrf
