@@ -9,9 +9,11 @@ services:
       dockerfile: docker/php/Dockerfile
       target: nginx-static
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     restart: unless-stopped
+    # SSL certs are stored in docker/nginx/certs/ on the VPS (gitignored).
+    # Drop the Cloudflare Origin Certificate there as server.crt + server.key.
 
   php:
     environment:
@@ -25,6 +27,56 @@ services:
       # Production FPM pool: higher limits, worker recycling.
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
       - ./docker/php/www.prod.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    restart: unless-stopped
+
+  # ── Horizon (queue worker) ───────────────────────────────────────────────────
+  # Runs Laravel Horizon — processes all queued jobs (order emails, backups, etc.)
+  # Shares the same image as the php service (built from the same Dockerfile).
+  queue:
+    container_name: bookshop_queue
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: app
+    env_file: .env
+    environment:
+      APP_ENV:   production
+      APP_DEBUG: "false"
+    volumes:
+      - app_storage:/var/www/storage
+      - app_bootstrap_cache:/var/www/bootstrap/cache
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.prod.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    command: php artisan horizon
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Scheduler ────────────────────────────────────────────────────────────────
+  # Emulates cron: calls `schedule:run` every 60 seconds.
+  # Handles: automated DB backups, cart cleanup, pending order expiration.
+  scheduler:
+    container_name: bookshop_scheduler
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: app
+    env_file: .env
+    environment:
+      APP_ENV:   production
+      APP_DEBUG: "false"
+    volumes:
+      - app_storage:/var/www/storage
+      - app_bootstrap_cache:/var/www/bootstrap/cache
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/www.prod.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    command: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    depends_on:
+      php:
+        condition: service_started
     restart: unless-stopped
 
   db:
