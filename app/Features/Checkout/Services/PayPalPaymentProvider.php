@@ -114,7 +114,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
             $order->load('items.book');
         }
 
-        $currency = strtoupper((string) config('shop.currency_code'));
+        $currency = strtoupper($order->currency);
         $totalAmount = number_format($order->total_amount / 100, 2, '.', '');
 
         $items = $order->items->map(function ($item) use ($currency): array {
