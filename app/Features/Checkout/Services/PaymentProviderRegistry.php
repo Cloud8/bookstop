@@ -7,6 +7,7 @@ namespace App\Features\Checkout\Services;
 use App\Enums\PaymentGateway;
 use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Contracts\SupportsWebhooks;
+use Closure;
 use InvalidArgumentException;
 
 class PaymentProviderRegistry
@@ -19,10 +20,10 @@ class PaymentProviderRegistry
     private array $resolved = [];
 
     /**
-     * @param  array<string, array{enabled: \Closure(): bool, factory: \Closure(): PaymentProvider}>  $definitions
-     *                                                                                                              Keyed by PaymentGateway->value. Each entry declares an `enabled` closure (checked at
-     *                                                                                                              runtime against config) and a lazy `factory` closure (instantiated on first use to
-     *                                                                                                              avoid boot-time credential failures for unconfigured providers).
+     * @param  array<string, array{enabled: Closure(): bool, factory: Closure(): PaymentProvider}>  $definitions
+     *                                                                                                            Keyed by PaymentGateway->value. Each entry declares an `enabled` closure (checked at
+     *                                                                                                            runtime against config) and a lazy `factory` closure (instantiated on first use to
+     *                                                                                                            avoid boot-time credential failures for unconfigured providers).
      */
     public function __construct(private readonly array $definitions) {}
 

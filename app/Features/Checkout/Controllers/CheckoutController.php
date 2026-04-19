@@ -77,7 +77,7 @@ class CheckoutController extends Controller
      * the session key gets overwritten by the later provider.
      *
      * Rule 33: If order is already paid (webhook was faster), redirect to library.
-     * Otherwise show polling page.
+     * Otherwise, show polling page.
      */
     public function success(Request $request): View|RedirectResponse
     {
@@ -102,7 +102,7 @@ class CheckoutController extends Controller
 
         try {
             $provider->handleReturn($request, $order);
-        } catch (PaymentException $e) {
+        } catch (PaymentException|ConnectionException $e) {
             Log::error('Payment provider error on return redirect', [
                 'provider' => $gateway->value,
                 'order_id' => $order->id,
