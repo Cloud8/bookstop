@@ -63,50 +63,51 @@ class CheckoutController extends Controller
                 ->withErrors(['cart' => 'Ошибка при создании платежа. Попробуйте позже.']);
         }
 
-        // Store provider name in session so success() can resolve the correct provider instance.
-        session(['payment_provider' => $paymentProvider->getName()]);
-
         return redirect()->away($session['url']);
     }
 
     /**
      * Handle the provider's success redirect.
      *
+     * Provider is detected from the return URL query params — each provider uses a
+     * distinct parameter (Stripe: session_id, PayPal: token). This avoids session-based
+     * provider tracking, which breaks when a user has multiple checkout tabs open and
+     * the session key gets overwritten by the later provider.
+     *
      * Rule 33: If order is already paid (webhook was faster), redirect to library.
      * Otherwise show polling page.
      */
     public function success(Request $request): View|RedirectResponse
     {
-        $providerSlug = session('payment_provider');
+        foreach ($this->registry->available() as $slug => $provider) {
+            $sessionId = $provider->extractReturnSessionId($request);
 
-        if ($providerSlug === null || ! $this->registry->isEnabled($providerSlug)) {
-            return view('checkout.success', ['order' => null]);
-        }
-
-        $paymentProvider = $this->registry->get($providerSlug);
-        $sessionId = $paymentProvider->extractReturnSessionId($request);
-
-        if ($sessionId) {
-            $order = $this->orderService->findByProviderSession($providerSlug, $sessionId, $request->user()->id);
-
-            if ($order) {
-                try {
-                    $paymentProvider->handleReturn($request, $order);
-                } catch (PaymentException $e) {
-                    Log::error('Payment provider error on return redirect', [
-                        'provider' => $providerSlug,
-                        'order_id' => $order->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
-                if ($order->status === OrderStatus::Paid) {
-                    return redirect()->route('cabinet.library')
-                        ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
-                }
-
-                return view('checkout.success', ['order' => $order]);
+            if ($sessionId === null) {
+                continue;
             }
+
+            $order = $this->orderService->findByProviderSession($slug, $sessionId, $request->user()->id);
+
+            if ($order === null) {
+                continue;
+            }
+
+            try {
+                $provider->handleReturn($request, $order);
+            } catch (PaymentException $e) {
+                Log::error('Payment provider error on return redirect', [
+                    'provider' => $slug,
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            if ($order->status === OrderStatus::Paid) {
+                return redirect()->route('cabinet.library')
+                    ->with('success', 'Оплата прошла успешно! Книги добавлены в вашу библиотеку.');
+            }
+
+            return view('checkout.success', ['order' => $order]);
         }
 
         return view('checkout.success', ['order' => null]);

@@ -279,7 +279,6 @@ class CheckoutControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->withSession(['payment_provider' => 'stripe'])
             ->get(route('checkout.success').'?session_id=cs_test_already_paid');
 
         $response->assertRedirect('/cabinet/library');
@@ -295,7 +294,6 @@ class CheckoutControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->withSession(['payment_provider' => 'stripe'])
             ->get(route('checkout.success').'?session_id=cs_test_pending');
 
         $response->assertOk();
