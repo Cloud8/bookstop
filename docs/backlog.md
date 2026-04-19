@@ -8,8 +8,15 @@
 
 Небольшие улучшения, которые не требуют архитектурных решений.
 
-### Аудит тестов — убрать классы `Phase*`
+### Аудит тестов — убрать классы `Phase*` и навести структуру
 Тесты написаны с именами вида `Phase5CartTest`, `Phase8BlogTest` и т.п. Переименовать в семантические имена (`CartTest`, `BlogTest` и т.д.), убрать prefix `Phase*` из всех тестовых классов и файлов.
+
+Дополнительно навести структуру в тестах оплаты. Сейчас `CheckoutControllerTest` де-факто тестирует только Stripe (мок провайдера завязан на Stripe-специфику), вебхуки разнесены несистемно — `StripeWebhookTest` отдельно, вебхуки PayPal внутри `PayPalPaymentProviderTest`. Целевая структура:
+- `CheckoutControllerTest` — контроллер с provider-agnostic моком (не привязан к конкретному провайдеру)
+- `StripePaymentProviderTest` — логика Stripe провайдера
+- `StripeWebhookTest` — вебхуки Stripe
+- `PayPalPaymentProviderTest` — логика PayPal провайдера
+- `PayPalWebhookTest` — вебхуки PayPal
 
 ### ~~Конфиг enabled для OAuth-провайдеров~~ ✅ done
 Реализовано: `services.google.enabled` / `services.vk.enabled` в `config/services.php`, управляется через `GOOGLE_OAUTH_ENABLED` / `VK_OAUTH_ENABLED` в `.env`. VK по умолчанию `false`.
