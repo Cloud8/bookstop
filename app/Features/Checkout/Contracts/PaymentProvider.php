@@ -8,6 +8,7 @@ use App\Enums\PaymentGateway;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 
 interface PaymentProvider
@@ -24,6 +25,7 @@ interface PaymentProvider
      * @return array{id: string, url: string}
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function createSession(Order $order, User $user): array;
 
@@ -40,6 +42,7 @@ interface PaymentProvider
      * Stripe: no-op (payment is confirmed via webhook).
      *
      * @throws PaymentException
+     * @throws ConnectionException
      */
     public function handleReturn(Request $request, Order $order): void;
 }
