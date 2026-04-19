@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Features\Cart\Listeners\MergeGuestCartOnLogin;
-use App\Features\Checkout\Contracts\PaymentProvider;
 use App\Features\Checkout\Events\OrderPaid;
 use App\Features\Checkout\Listeners\SendOrderConfirmationEmail;
 use App\Features\Checkout\Services\PaymentProviderRegistry;
@@ -38,21 +37,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Default payment provider for CheckoutController — Stripe.
-        // PayPal selection UI is future work; for now Stripe is the active provider.
-        $this->app->singleton(
-            PaymentProvider::class,
-            StripePaymentProvider::class,
-        );
-
-        // Registry holds lazy factory closures keyed by provider slug so WebhookController
-        // can resolve the correct provider from the route {provider} parameter.
-        // Factories are called on first use — providers with missing credentials (e.g. PayPal
-        // in Stripe-only environments) are never instantiated unless their webhook route is hit.
+        // Registry is the single source of truth for all payment provider resolution —
+        // both checkout (available providers) and webhooks (by slug).
+        // Each definition declares an `enabled` closure (checked at runtime against config)
+        // and a lazy `factory` closure (instantiated on first access to avoid boot-time
+        // credential failures for unconfigured providers).
         $this->app->singleton(PaymentProviderRegistry::class, function ($app): PaymentProviderRegistry {
             return new PaymentProviderRegistry([
-                'stripe' => fn () => $app->make(StripePaymentProvider::class),
-                'paypal' => fn () => $app->make(PayPalPaymentProvider::class),
+                'stripe' => [
+                    'enabled' => fn (): bool => (bool) config('services.stripe.enabled', true),
+                    'factory' => fn (): StripePaymentProvider => $app->make(StripePaymentProvider::class),
+                ],
+                'paypal' => [
+                    'enabled' => fn (): bool => (bool) config('services.paypal.enabled', false),
+                    'factory' => fn (): PayPalPaymentProvider => $app->make(PayPalPaymentProvider::class),
+                ],
             ]);
         });
     }

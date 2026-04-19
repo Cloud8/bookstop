@@ -141,30 +141,39 @@
                             </div>
                         @else
                             {{-- State 4: authenticated + verified --}}
-                            @if(\Illuminate\Support\Facades\Route::has('checkout.store'))
-                                <form
-                                    method="POST"
-                                    action="{{ route('checkout.store') }}"
-                                    data-ga-value="{{ $total / 100 }}"
-                                    data-ga-items="{{ Js::from($items->map(fn($i) => ['item_id' => (string) $i->book->id, 'item_name' => $i->book->title, 'price' => $i->book->price / 100])->values()) }}"
-                                    @submit="
-                                        if (typeof gtag !== 'undefined') {
-                                            gtag('event', 'begin_checkout', {
-                                                currency: '{{ config('shop.currency_code') }}',
-                                                value: Number($el.dataset.gaValue),
-                                                items: JSON.parse($el.dataset.gaItems)
-                                            });
-                                        }
-                                    "
-                                >
-                                    @csrf
-                                    <button
-                                        type="submit"
-                                        class="w-full px-5 py-2.5 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
-                                    >
-                                        Оформить заказ
-                                    </button>
-                                </form>
+                            @if(\Illuminate\Support\Facades\Route::has('checkout.store') && count($paymentProviders) > 0)
+                                @php
+                                    $providerLabels = ['stripe' => 'Оплатить картой', 'paypal' => 'Оплатить через PayPal'];
+                                    $gaDataAttr = 'data-ga-value="' . ($total / 100) . '" data-ga-items="' . e(Js::from($items->map(fn($i) => ['item_id' => (string) $i->book->id, 'item_name' => $i->book->title, 'price' => $i->book->price / 100])->values())) . '"';
+                                @endphp
+                                <div class="flex flex-col gap-2">
+                                    @foreach($paymentProviders as $providerSlug)
+                                        <form
+                                            method="POST"
+                                            action="{{ route('checkout.store') }}"
+                                            data-ga-value="{{ $total / 100 }}"
+                                            data-ga-items="{{ Js::from($items->map(fn($i) => ['item_id' => (string) $i->book->id, 'item_name' => $i->book->title, 'price' => $i->book->price / 100])->values()) }}"
+                                            @submit="
+                                                if (typeof gtag !== 'undefined') {
+                                                    gtag('event', 'begin_checkout', {
+                                                        currency: '{{ config('shop.currency_code') }}',
+                                                        value: Number($el.dataset.gaValue),
+                                                        items: JSON.parse($el.dataset.gaItems)
+                                                    });
+                                                }
+                                            "
+                                        >
+                                            @csrf
+                                            <input type="hidden" name="provider" value="{{ $providerSlug }}">
+                                            <button
+                                                type="submit"
+                                                class="w-full px-5 py-2.5 bg-brand-700 text-white font-sans text-sm rounded hover:bg-brand-800 transition font-semibold"
+                                            >
+                                                {{ $providerLabels[$providerSlug] ?? 'Оформить заказ' }}
+                                            </button>
+                                        </form>
+                                    @endforeach
+                                </div>
                             @else
                                 <button
                                     type="button"

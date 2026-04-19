@@ -18,52 +18,81 @@ class PaymentProviderRegistry
     private array $resolved = [];
 
     /**
-     * @param  array<string, \Closure(): PaymentProvider>  $factories  Lazy factory closures keyed by slug.
-     *                                                                 Providers are instantiated on first access so
-     *                                                                 missing credentials for unused providers do not
-     *                                                                 cause boot-time failures.
+     * @param  array<string, array{enabled: \Closure(): bool, factory: \Closure(): PaymentProvider}>  $definitions
+     *                                                                                                              Each entry declares an `enabled` closure (checked at runtime against config) and a lazy
+     *                                                                                                              `factory` closure (instantiated on first use to avoid boot-time credential failures).
      */
-    public function __construct(private readonly array $factories) {}
+    public function __construct(private readonly array $definitions) {}
 
     /**
-     * Resolve a provider by its slug.
+     * All providers that are currently enabled, keyed by slug.
      *
-     * @throws InvalidArgumentException if the provider is not registered.
+     * Used by CheckoutController to build the payment method selector and validate
+     * the `provider` request parameter.
+     *
+     * @return array<string, PaymentProvider>
      */
-    public function get(string $name): PaymentProvider
+    public function available(): array
     {
-        if (! $this->has($name)) {
-            throw new InvalidArgumentException("Payment provider '{$name}' is not registered.");
+        $result = [];
+
+        foreach ($this->definitions as $slug => $definition) {
+            if (($definition['enabled'])()) {
+                $result[$slug] = $this->resolve($slug);
+            }
         }
 
-        if (! isset($this->resolved[$name])) {
-            $this->resolved[$name] = ($this->factories[$name])();
-        }
-
-        return $this->resolved[$name];
+        return $result;
     }
 
     /**
-     * Check whether a provider slug is registered.
+     * Resolve an enabled provider by its slug.
+     *
+     * @throws InvalidArgumentException if the provider is not registered or not enabled.
      */
-    public function has(string $name): bool
+    public function get(string $slug): PaymentProvider
     {
-        return isset($this->factories[$name]);
+        if (! isset($this->definitions[$slug])) {
+            throw new InvalidArgumentException("Payment provider '{$slug}' is not registered.");
+        }
+
+        if (! ($this->definitions[$slug]['enabled'])()) {
+            throw new InvalidArgumentException("Payment provider '{$slug}' is not enabled.");
+        }
+
+        return $this->resolve($slug);
     }
 
     /**
      * Resolve a webhook-capable provider by its slug.
      *
+     * Intentionally does NOT check the `enabled` flag — webhooks may arrive for a provider
+     * that has since been disabled (e.g. in-flight payments). We process them to avoid losing
+     * confirmed payments; the enabled flag only controls checkout UI availability.
+     *
      * @throws InvalidArgumentException if the provider is not registered or does not support webhooks.
      */
-    public function webhookProvider(string $name): SupportsWebhooks
+    public function webhookProvider(string $slug): SupportsWebhooks
     {
-        $provider = $this->get($name);
+        if (! isset($this->definitions[$slug])) {
+            throw new InvalidArgumentException("Payment provider '{$slug}' is not registered.");
+        }
+
+        $provider = $this->resolve($slug);
 
         if (! $provider instanceof SupportsWebhooks) {
-            throw new InvalidArgumentException("Payment provider '{$name}' does not support webhooks.");
+            throw new InvalidArgumentException("Payment provider '{$slug}' does not support webhooks.");
         }
 
         return $provider;
+    }
+
+    private function resolve(string $slug): PaymentProvider
+    {
+        if (! isset($this->resolved[$slug])) {
+            $this->resolved[$slug] = ($this->definitions[$slug]['factory'])();
+        }
+
+        return $this->resolved[$slug];
     }
 }
