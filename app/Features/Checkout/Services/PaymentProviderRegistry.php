@@ -87,11 +87,11 @@ class PaymentProviderRegistry
         $slug = $gateway->value;
 
         if (! isset($this->definitions[$slug])) {
-            throw new InvalidArgumentException("Payment provider '{$slug}' is not registered.");
+            throw new InvalidArgumentException("Payment provider '$slug' is not registered.");
         }
 
         if (! ($this->definitions[$slug]['enabled'])()) {
-            throw new InvalidArgumentException("Payment provider '{$slug}' is not enabled.");
+            throw new InvalidArgumentException("Payment provider '$slug' is not enabled.");
         }
 
         return $this->resolve($slug);
@@ -109,13 +109,13 @@ class PaymentProviderRegistry
     public function webhookProvider(string $slug): SupportsWebhooks
     {
         if (! isset($this->definitions[$slug])) {
-            throw new InvalidArgumentException("Payment provider '{$slug}' is not registered.");
+            throw new InvalidArgumentException("Payment provider '$slug' is not registered.");
         }
 
         $provider = $this->resolve($slug);
 
         if (! $provider instanceof SupportsWebhooks) {
-            throw new InvalidArgumentException("Payment provider '{$slug}' does not support webhooks.");
+            throw new InvalidArgumentException("Payment provider '$slug' does not support webhooks.");
         }
 
         return $provider;

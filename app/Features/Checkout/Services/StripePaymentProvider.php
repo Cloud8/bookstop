@@ -24,7 +24,6 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Stripe;
 use Stripe\Webhook;
-use Throwable;
 use UnexpectedValueException;
 
 readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhooks
@@ -228,8 +227,6 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     /**
      * Process an expired Stripe Checkout session.
      * Marks the transaction and order as failed if still pending.
-     *
-     * @throws Throwable
      */
     private function handleSessionExpired(Session $session): void
     {
@@ -247,6 +244,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
 
         // Only transition pending transactions — avoid overwriting already-settled states
         if ($transaction->status === 'pending') {
+            /** @noinspection PhpUnhandledExceptionInspection */
             DB::transaction(function () use ($transaction, $stripeSessionId): void {
                 $transaction->status = 'expired';
                 $transaction->save();

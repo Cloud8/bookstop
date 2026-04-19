@@ -13,9 +13,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class OrderService
+readonly class OrderService
 {
-    public function __construct(private readonly CartService $cartService) {}
+    public function __construct(private CartService $cartService) {}
 
     /**
      * Create an Order from the user's current cart.

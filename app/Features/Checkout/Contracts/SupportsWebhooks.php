@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Checkout\Contracts;
 
 use App\Features\Checkout\Exceptions\PaymentException;
+use Throwable;
 
 interface SupportsWebhooks
 {
@@ -20,7 +21,7 @@ interface SupportsWebhooks
      * @param  array<string, string|string[]>  $headers
      *
      * @throws PaymentException on signature verification failure or invalid payload
-     * @throws \Throwable on unexpected errors (causes provider retry via HTTP 500)
+     * @throws Throwable on unexpected errors (causes provider retry via HTTP 500)
      */
     public function handleWebhook(string $payload, array $headers): void;
 }

@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Throwable;
 
 class WebhookController extends Controller
 {
@@ -23,6 +24,8 @@ class WebhookController extends Controller
      *
      * Rule 35: signature verification is performed inside each provider.
      * Rule 29: webhook is the source of truth for payment confirmation.
+     *
+     * @throws Throwable
      */
     public function handle(Request $request, string $provider): Response
     {
