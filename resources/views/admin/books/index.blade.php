@@ -135,7 +135,7 @@
 
                                 {{-- Price --}}
                                 <td class="px-4 py-3 text-text-primary">
-                                    {{ number_format($book->price / 100, 0, '.', ' ') }} ₽
+                                    {{ number_format($book->price / 100, 0, '.', ' ') }} {{ config('shop.currency_symbol') }}
                                 </td>
 
                                 {{-- Status toggle --}}
