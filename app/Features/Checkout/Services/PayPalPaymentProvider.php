@@ -117,6 +117,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
         $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)
+            ->withBody('{}', 'application/json')
             ->post("{$this->baseUrl}/v2/checkout/orders/{$token}/capture");
 
         if ($response->failed()) {
