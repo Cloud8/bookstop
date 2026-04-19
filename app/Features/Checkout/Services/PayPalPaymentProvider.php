@@ -56,12 +56,13 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
     }
 
     /**
-     * Capture the PayPal order on the success redirect.
+     * Trigger the PayPal capture API call on the success redirect.
      *
-     * PayPal requires an explicit capture call — unlike Stripe which confirms
-     * payment asynchronously via webhook. We capture here so the order status
-     * can be updated before the user sees the success page. The webhook event
-     * PAYMENT.CAPTURE.COMPLETED remains the authoritative source of truth (Rule 29).
+     * PayPal requires an explicit capture to lock in the funds — unlike Stripe which
+     * settles asynchronously. The capture is initiated here so funds are secured
+     * before the user reaches the polling page. Order status is NOT updated by this
+     * method; it remains pending until the PAYMENT.CAPTURE.COMPLETED webhook fires
+     * and ProcessPaymentConfirmation runs (Rule 29).
      *
      * @throws PaymentException
      */
@@ -234,8 +235,7 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
     /**
      * Process a PAYMENT.CAPTURE.COMPLETED event.
      * Dispatches ProcessPaymentConfirmation — same job used by Stripe.
-     */
-    /**
+     *
      * @param  array<string, mixed>  $event
      */
     private function handleCaptureCompleted(array $event): void

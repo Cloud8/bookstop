@@ -27,7 +27,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
     public function __construct(
         public readonly int $orderId,
-        public readonly string $paymentIntentId,
+        public readonly string $transactionId,
         public readonly string $sessionId,
         public readonly string $provider = 'stripe',
     ) {
@@ -63,7 +63,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
             $order->paid_at = now();
             $order->save();
 
-            // Update the OrderTransaction to succeeded and store the payment_intent
+            // Update the OrderTransaction to succeeded and store the provider transaction ID
             // so the provider-specific data stays in order_transactions, not on orders.
             $transaction = OrderTransaction::query()
                 ->where('order_id', $this->orderId)
@@ -73,7 +73,7 @@ class ProcessPaymentConfirmation implements ShouldQueue
 
             if ($transaction !== null) {
                 $providerData = $transaction->provider_data;
-                $providerData['payment_intent'] = $this->paymentIntentId;
+                $providerData['transaction_id'] = $this->transactionId;
 
                 $transaction->provider_data = $providerData;
                 $transaction->status = 'succeeded';

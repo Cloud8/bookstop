@@ -275,7 +275,7 @@ class CheckoutControllerTest extends TestCase
         $order = Order::factory()->paid()->create(['user_id' => $user->id]);
         OrderTransaction::factory()->succeeded()->create([
             'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_already_paid', 'payment_intent' => 'pi_x'],
+            'provider_data' => ['session_id' => 'cs_test_already_paid', 'transaction_id' => 'pi_x'],
         ]);
 
         $response = $this->actingAs($user)

@@ -79,7 +79,7 @@ class CheckoutController extends Controller
     {
         $providerSlug = session('payment_provider');
 
-        if ($providerSlug === null || ! array_key_exists($providerSlug, $this->registry->available())) {
+        if ($providerSlug === null || ! $this->registry->isEnabled($providerSlug)) {
             return view('checkout.success', ['order' => null]);
         }
 

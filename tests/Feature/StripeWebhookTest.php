@@ -144,7 +144,7 @@ class StripeWebhookTest extends TestCase
 
         Queue::assertPushed(ProcessPaymentConfirmation::class, function ($job) use ($order): bool {
             return $job->orderId === $order->id
-                && $job->paymentIntentId === 'pi_test_intent_123'
+                && $job->transactionId === 'pi_test_intent_123'
                 && $job->sessionId === 'cs_test_valid_session'
                 && $job->provider === 'stripe';
         });
@@ -164,7 +164,7 @@ class StripeWebhookTest extends TestCase
         ]);
         OrderTransaction::factory()->succeeded()->create([
             'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_already_paid', 'payment_intent' => 'pi_test_intent_456'],
+            'provider_data' => ['session_id' => 'cs_test_already_paid', 'transaction_id' => 'pi_test_intent_456'],
         ]);
 
         $event = $this->buildCheckoutSessionCompletedEvent('cs_test_already_paid', 'pi_test_intent_456');
@@ -271,7 +271,7 @@ class StripeWebhookTest extends TestCase
         $this->assertEquals(OrderStatus::Paid, $order->status);
         $this->assertNotNull($order->paid_at);
 
-        // payment_intent is now stored in order_transactions, not on the order
+        // transaction_id is now stored in order_transactions, not on the order
         $this->assertDatabaseHas('order_transactions', [
             'order_id' => $order->id,
             'provider' => 'stripe',
@@ -294,7 +294,7 @@ class StripeWebhookTest extends TestCase
         ]);
         OrderTransaction::factory()->succeeded()->create([
             'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_idempotent', 'payment_intent' => 'pi_original'],
+            'provider_data' => ['session_id' => 'cs_test_idempotent', 'transaction_id' => 'pi_original'],
         ]);
         OrderItem::factory()->create([
             'order_id' => $order->id,
@@ -422,7 +422,7 @@ class StripeWebhookTest extends TestCase
         $order = Order::factory()->paid()->create(['user_id' => $user->id]);
         $transaction = OrderTransaction::factory()->succeeded()->create([
             'order_id' => $order->id,
-            'provider_data' => ['session_id' => 'cs_test_paid_session', 'payment_intent' => 'pi_test_x'],
+            'provider_data' => ['session_id' => 'cs_test_paid_session', 'transaction_id' => 'pi_test_x'],
         ]);
 
         $event = [

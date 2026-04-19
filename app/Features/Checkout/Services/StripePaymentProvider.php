@@ -110,7 +110,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
             'provider' => 'stripe',
             'provider_data' => [
                 'session_id' => $session->id,
-                'payment_intent' => $session->payment_intent,
+                'transaction_id' => $session->payment_intent,
             ],
             'status' => 'pending',
             'expires_at' => Carbon::createFromTimestamp($session->expires_at),
@@ -170,7 +170,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
     private function handleSessionCompleted(Session $session): void
     {
         $stripeSessionId = $session->id;
-        $paymentIntentId = is_string($session->payment_intent)
+        $transactionId = is_string($session->payment_intent)
             ? $session->payment_intent
             : (string) ($session->payment_intent->id ?? '');
 
@@ -217,7 +217,7 @@ readonly class StripePaymentProvider implements PaymentProvider, SupportsWebhook
         // Dispatch queued job — Rule 29, 30, 31
         ProcessPaymentConfirmation::dispatch(
             $order->id,
-            $paymentIntentId,
+            $transactionId,
             $stripeSessionId,
             $this->getName(),
         );

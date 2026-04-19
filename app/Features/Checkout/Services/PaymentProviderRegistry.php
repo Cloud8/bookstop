@@ -46,6 +46,17 @@ class PaymentProviderRegistry
     }
 
     /**
+     * Check whether a provider is registered AND currently enabled.
+     *
+     * Cheaper than calling available() when you only need to gate on a single slug
+     * (e.g. in success() to validate the session-stored provider name).
+     */
+    public function isEnabled(string $slug): bool
+    {
+        return isset($this->definitions[$slug]) && ($this->definitions[$slug]['enabled'])();
+    }
+
+    /**
      * Resolve an enabled provider by its slug.
      *
      * @throws InvalidArgumentException if the provider is not registered or not enabled.

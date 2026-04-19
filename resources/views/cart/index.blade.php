@@ -144,7 +144,6 @@
                             @if(\Illuminate\Support\Facades\Route::has('checkout.store') && count($paymentProviders) > 0)
                                 @php
                                     $providerLabels = ['stripe' => 'Оплатить картой', 'paypal' => 'Оплатить через PayPal'];
-                                    $gaDataAttr = 'data-ga-value="' . ($total / 100) . '" data-ga-items="' . e(Js::from($items->map(fn($i) => ['item_id' => (string) $i->book->id, 'item_name' => $i->book->title, 'price' => $i->book->price / 100])->values())) . '"';
                                 @endphp
                                 <div class="flex flex-col gap-2">
                                     @foreach($paymentProviders as $providerSlug)
