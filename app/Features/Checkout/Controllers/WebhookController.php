@@ -7,6 +7,7 @@ namespace App\Features\Checkout\Controllers;
 use App\Features\Checkout\Exceptions\PaymentException;
 use App\Features\Checkout\Services\PaymentProviderRegistry;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -45,6 +46,14 @@ class WebhookController extends Controller
             ]);
 
             return response($e->getMessage(), 400);
+        } catch (ConnectionException $e) {
+            Log::error('Webhook: connection error during provider verification', [
+                'provider' => $provider,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Return 503 so the provider retries the webhook later.
+            return response('Service Unavailable', 503);
         }
 
         return response('OK', 200);

@@ -189,7 +189,7 @@
                         <div class="relative bg-surface rounded-xl shadow-xl p-6 max-w-sm w-full z-10">
                             <h3 class="font-serif text-lg text-text-primary mb-2">Подтвердить возврат?</h3>
                             <p class="text-sm text-text-muted mb-6">
-                                Заказ #{{ $order->id }} будет помечен как возвращённый. Убедитесь, что возврат уже выполнен в Stripe.
+                                Заказ #{{ $order->id }} будет помечен как возвращённый. Убедитесь, что возврат уже выполнен у платёжного провайдера{{ $order->transaction ? ' ('.ucfirst($order->transaction->provider).')' : '' }}.
                             </p>
                             <div class="flex gap-3 justify-end">
                                 <button

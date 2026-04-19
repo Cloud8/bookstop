@@ -12,6 +12,7 @@ use App\Features\Checkout\Services\OrderService;
 use App\Features\Checkout\Services\PaymentProviderRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,7 +51,7 @@ class CheckoutController extends Controller
 
         try {
             $session = $paymentProvider->createSession($order, $user);
-        } catch (PaymentException $e) {
+        } catch (PaymentException|ConnectionException $e) {
             Log::error('Payment provider error during session creation', [
                 'provider' => $paymentProvider->getName()->value,
                 'order_id' => $order->id,

@@ -231,7 +231,6 @@ readonly class PayPalPaymentProvider implements PaymentProvider, SupportsWebhook
             'provider' => PaymentGateway::PayPal->value,
             'provider_data' => [
                 'session_id' => $paypalOrderId,
-                'paypal_order_id' => $paypalOrderId,
             ],
             'status' => 'pending',
             'expires_at' => Carbon::now()->addHours(3),

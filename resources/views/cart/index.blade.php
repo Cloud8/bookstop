@@ -187,7 +187,7 @@
                                                 {{-- Neutral card payment button --}}
                                                 <button
                                                     type="submit"
-                                                    class="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 text-white font-sans text-sm font-semibold rounded-lg hover:bg-gray-800 active:bg-gray-950 transition"
+                                                    class="w-full flex items-center justify-center gap-2 px-5 py-3 bg-text-primary text-white font-sans text-sm font-semibold rounded-lg hover:bg-brand-950 transition"
                                                 >
                                                     <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
