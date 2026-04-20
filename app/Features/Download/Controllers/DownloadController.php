@@ -20,7 +20,7 @@ class DownloadController extends Controller
     {
         Gate::authorize('download', $book);
 
-        if (blank($book->epub_path)) {
+        if (! $book->hasClientReadyFile()) {
             abort(404);
         }
 

@@ -98,9 +98,9 @@ class BookAdminService
             throw new InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
         }
 
-        // Cannot publish a book that has no epub file.
-        if ($newStatus === BookStatus::Published && $epub === null && $book->epub_path === null) {
-            throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+        // Cannot publish a book that has no client-accessible ready file.
+        if ($newStatus === BookStatus::Published && $epub === null && ! $book->hasClientReadyFile()) {
+            throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
         return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
@@ -157,8 +157,8 @@ class BookAdminService
             }
             $book->status = BookStatus::Draft;
         } else {
-            if ($book->epub_path === null) {
-                throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+            if (! $book->hasClientReadyFile()) {
+                throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
             }
             $book->status = BookStatus::Published;
         }

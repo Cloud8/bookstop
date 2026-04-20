@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookFileFormat;
+use App\Enums\BookFileStatus;
 use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,7 +27,6 @@ use Illuminate\Support\Facades\Storage;
  * @property string $currency
  * @property string|null $cover_path
  * @property string|null $cover_thumb_path
- * @property string|null $epub_path
  * @property BookStatus $status
  * @property bool $is_featured
  * @property bool $is_available
@@ -36,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $cover_url
  * @property-read string|null $cover_thumb_url
  * @property-read Collection<int, UserBook> $userBooks
+ * @property-read Collection<int, BookFile> $files
  */
 class Book extends Model
 {
@@ -51,7 +53,6 @@ class Book extends Model
         'currency',
         'cover_path',
         'cover_thumb_path',
-        'epub_path',
         'status',
         'is_featured',
         'is_available',
@@ -118,6 +119,24 @@ class Book extends Model
     public function userBooks(): HasMany
     {
         return $this->hasMany(UserBook::class);
+    }
+
+    /** @return HasMany<BookFile, $this> */
+    public function files(): HasMany
+    {
+        return $this->hasMany(BookFile::class);
+    }
+
+    /**
+     * Returns true if the book has at least one client-accessible BookFile
+     * (EPUB or FB2) with status=ready. Used as the publish guard.
+     */
+    public function hasClientReadyFile(): bool
+    {
+        return $this->files()
+            ->where('status', BookFileStatus::Ready)
+            ->whereIn('format', array_map(fn (BookFileFormat $f) => $f->value, BookFileFormat::clientAccessible()))
+            ->exists();
     }
 
     /**

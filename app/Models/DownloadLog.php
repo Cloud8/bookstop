@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $book_id
  * @property string $ip_address
+ * @property string $format
  * @property Carbon $downloaded_at
  * @property-read User $user
  * @property-read Book $book
@@ -30,6 +31,7 @@ class DownloadLog extends Model
         'user_id',
         'book_id',
         'ip_address',
+        'format',
         'downloaded_at',
     ];
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Book;
+use App\Models\BookFile;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -28,7 +29,7 @@ class Phase11DataLayerTest extends TestCase
 
     private function makeBookWithEpub(): Book
     {
-        return Book::factory()->create(['epub_path' => 'epubs/test-book.epub']);
+        return Book::factory()->create();
     }
 
     /**
@@ -74,6 +75,7 @@ class Phase11DataLayerTest extends TestCase
 
     /**
      * Rule 81: Non-revoked user_book (revoked_at = null) allows download.
+     * A ready EPUB BookFile must exist for the download to succeed.
      */
     public function test_non_revoked_user_book_allows_download(): void
     {
@@ -81,6 +83,7 @@ class Phase11DataLayerTest extends TestCase
 
         $user = User::factory()->create();
         $book = $this->makeBookWithEpub();
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
         UserBook::factory()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
