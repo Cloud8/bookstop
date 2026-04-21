@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Features\Download\Controllers;
 
+use App\Enums\BookFileFormat;
+use App\Enums\BookFileStatus;
 use App\Features\Download\Services\DownloadService;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
@@ -20,16 +22,36 @@ class DownloadController extends Controller
     {
         Gate::authorize('download', $book);
 
-        if (! $book->hasClientReadyFile()) {
+        // Resolve requested format, defaulting to epub.
+        $formatValue = $request->query('format', 'epub');
+
+        // Controller gate (Rule 2): DOCX is never delivered to clients.
+        $format = BookFileFormat::tryFrom((string) $formatValue);
+
+        if ($format === null) {
+            abort(422);
+        }
+
+        if (! $format->isClientAccessible()) {
+            abort(403);
+        }
+
+        // Find a ready BookFile for the requested format.
+        $bookFile = $book->files()
+            ->where('format', $format)
+            ->where('status', BookFileStatus::Ready)
+            ->first();
+
+        if ($bookFile === null) {
             abort(404);
         }
 
         /** @var User $user */
         $user = $request->user();
 
-        $url = $this->downloadService->generateUrl($book);
+        $url = $this->downloadService->generateUrl($bookFile);
 
-        $this->downloadService->logDownload($user, $book, (string) $request->ip());
+        $this->downloadService->logDownload($user, $bookFile, (string) $request->ip());
 
         return redirect($url);
     }
