@@ -53,7 +53,6 @@ use Illuminate\Support\Facades\Storage;
  * @method static Builder<static>|Book whereCoverThumbPath($value)
  * @method static Builder<static>|Book whereCreatedAt($value)
  * @method static Builder<static>|Book whereCurrency($value)
- * @method static Builder<static>|Book whereEpubPath($value)
  * @method static Builder<static>|Book whereExcerpt($value)
  * @method static Builder<static>|Book whereFragment($value)
  * @method static Builder<static>|Book whereId($value)

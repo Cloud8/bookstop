@@ -27,8 +27,10 @@ class DownloadController extends Controller
         /** @var User $user */
         $user = $request->user();
 
+        $url = $this->downloadService->generateUrl($book);
+
         $this->downloadService->logDownload($user, $book, (string) $request->ip());
 
-        return redirect($this->downloadService->generateUrl($book));
+        return redirect($url);
     }
 }

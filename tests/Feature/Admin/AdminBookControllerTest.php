@@ -173,8 +173,7 @@ class AdminBookControllerTest extends TestCase
     #[Group('phase-13-3')]
     public function test_source_file_upload_dispatches_upload_source_file_job(): void
     {
-        // Implemented in Phase 13.3 — UploadSourceFile job replaces ProcessBookFileUpload
-        $this->assertTrue(true);
+        $this->markTestSkipped('Requires Phase 13.3: UploadSourceFile job replaces ProcessBookFileUpload.');
     }
 
     // -------------------------------------------------------------------------

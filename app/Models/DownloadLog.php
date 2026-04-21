@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookFileFormat;
 use Database\Factories\DownloadLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $book_id
  * @property string $ip_address
+ * @property BookFileFormat $format
  * @property Carbon $downloaded_at
  * @property-read Book $book
  * @property-read User $user
@@ -26,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereBookId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereDownloadedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereFormat($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereIpAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DownloadLog whereUserId($value)
  *
@@ -49,6 +52,7 @@ class DownloadLog extends Model
     protected function casts(): array
     {
         return [
+            'format' => BookFileFormat::class,
             'downloaded_at' => 'datetime',
         ];
     }
