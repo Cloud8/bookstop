@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\BookFileFormat;
+
 return [
 
     /*
@@ -19,16 +21,16 @@ return [
 
     'formats' => [
         'conversion_matrix' => [
-            'docx' => ['epub', 'fb2'],
-            'epub' => ['fb2'],
-            'fb2' => ['epub'],
+            BookFileFormat::Docx->value => [BookFileFormat::Epub->value, BookFileFormat::Fb2->value],
+            BookFileFormat::Epub->value => [BookFileFormat::Fb2->value],
+            BookFileFormat::Fb2->value => [BookFileFormat::Epub->value],
         ],
 
         'converter_preference' => [
-            'docx_to_epub' => 'pandoc',
-            'docx_to_fb2' => 'calibre',
-            'epub_to_fb2' => 'calibre',
-            'fb2_to_epub' => 'calibre',
+            BookFileFormat::Docx->value.'_to_'.BookFileFormat::Epub->value => 'pandoc',
+            BookFileFormat::Docx->value.'_to_'.BookFileFormat::Fb2->value => 'calibre',
+            BookFileFormat::Epub->value.'_to_'.BookFileFormat::Fb2->value => 'calibre',
+            BookFileFormat::Fb2->value.'_to_'.BookFileFormat::Epub->value => 'calibre',
         ],
     ],
 
