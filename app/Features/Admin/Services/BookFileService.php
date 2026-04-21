@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Features\Admin\Services;
 
 use App\Models\Book;
+use App\Models\BookFile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -68,13 +69,17 @@ class BookFileService
     }
 
     /**
-     * Delete all book files from private S3 bucket.
+     * Delete all book format files from the private S3 bucket.
      *
-     * TODO Phase 13.3: iterate $book->files and delete each S3 path.
-     * epub_path column was dropped in Phase 13.1.
+     * Iterates all BookFile records for the book and deletes each S3 path.
+     * Does not delete DB records — cascade FK handles that on book delete.
      */
-    public function deleteEpub(Book $book): void
+    public function deleteBookFiles(Book $book): void
     {
-        // No-op until Phase 13.3 adds deleteBookFiles() with BookFile iteration.
+        $book->files->each(function (BookFile $bookFile): void {
+            if ($bookFile->path !== null) {
+                Storage::disk('s3-private')->delete($bookFile->path);
+            }
+        });
     }
 }
