@@ -25,28 +25,12 @@ class BookFileService
     {
         $s3Path = $this->streamToS3($file->getRealPath(), $book->id, $format);
 
-        $existing = $this->findBookFile($book, $format, isSource: false);
-
-        if ($existing instanceof BookFile) {
-            if ($existing->path !== null) {
-                Storage::disk('s3-private')->delete($existing->path);
-            }
-
-            $existing->update([
-                'path' => $s3Path,
-                'status' => BookFileStatus::Ready,
-                'error_message' => null,
-                'is_source' => false,
-            ]);
-        } else {
-            BookFile::create([
-                'book_id' => $book->id,
-                'format' => $format,
-                'status' => BookFileStatus::Ready,
-                'path' => $s3Path,
-                'is_source' => false,
-            ]);
-        }
+        $this->upsertBookFile($book, $format, isSource: false, attributes: [
+            'path' => $s3Path,
+            'status' => BookFileStatus::Ready,
+            'error_message' => null,
+            'is_source' => false,
+        ]);
     }
 
     /**
@@ -124,18 +108,26 @@ class BookFileService
 
     private function upsertSourceBookFile(Book $book, BookFileFormat $format): BookFile
     {
-        $existing = $this->findBookFile($book, $format, isSource: true);
+        return $this->upsertBookFile($book, $format, isSource: true, attributes: [
+            'status' => BookFileStatus::Pending,
+            'path' => null,
+            'error_message' => null,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function upsertBookFile(Book $book, BookFileFormat $format, bool $isSource, array $attributes): BookFile
+    {
+        $existing = $this->findBookFile($book, $format, isSource: $isSource);
 
         if ($existing instanceof BookFile) {
             if ($existing->path !== null) {
                 Storage::disk('s3-private')->delete($existing->path);
             }
 
-            $existing->update([
-                'status' => BookFileStatus::Pending,
-                'path' => null,
-                'error_message' => null,
-            ]);
+            $existing->update($attributes);
 
             return $existing;
         }
@@ -143,8 +135,8 @@ class BookFileService
         return BookFile::create([
             'book_id' => $book->id,
             'format' => $format,
-            'status' => BookFileStatus::Pending,
-            'is_source' => true,
+            'is_source' => $isSource,
+            ...$attributes,
         ]);
     }
 
