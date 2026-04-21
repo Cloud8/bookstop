@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $expires_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Order $order
+ * @property-read Order|null $order
  *
  * @method static \Database\Factories\OrderTransactionFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderTransaction newModelQuery()
