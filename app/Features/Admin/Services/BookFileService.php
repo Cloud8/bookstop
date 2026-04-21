@@ -61,7 +61,7 @@ class BookFileService
         $tempPath = $this->moveToTemp($file, $ext);
         $bookFile = $this->upsertSourceBookFile($book, $format);
 
-        UploadSourceFile::dispatch($bookFile->id, $tempPath);
+        UploadSourceFile::dispatch($bookFile->id, $tempPath)->afterCommit();
     }
 
     /**
