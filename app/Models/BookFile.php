@@ -66,4 +66,9 @@ class BookFile extends Model
     {
         return $this->format->isClientAccessible();
     }
+
+    public function clientFilename(): string
+    {
+        return $this->book->slug.'.'.$this->format->extension();
+    }
 }
