@@ -4,22 +4,20 @@ declare(strict_types=1);
 
 namespace App\Features\Admin\Services;
 
-use App\Enums\BookFileFormat;
-use App\Enums\BookFileStatus;
 use App\Enums\BookStatus;
-use App\Features\Admin\Jobs\UploadSourceFile;
 use App\Models\Book;
-use App\Models\BookFile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Throwable;
 
-class BookAdminService
+readonly class BookAdminService
 {
-    public function __construct(private readonly BookFileService $fileService) {}
+    public function __construct(
+        private BookFileService       $fileService,
+        private BookFileUploadService $uploadService,
+    ) {}
 
     /**
      * Create a new book record, upload cover files synchronously, and dispatch
@@ -63,7 +61,7 @@ class BookAdminService
             }
 
             if ($sourceFile !== null) {
-                $this->dispatchSourceFileUpload($book, $sourceFile);
+                $this->uploadService->queueSourceUpload($book, $sourceFile);
             }
 
             return $book;
@@ -121,7 +119,7 @@ class BookAdminService
             $book->save();
 
             if ($sourceFile !== null) {
-                $this->dispatchSourceFileUpload($book, $sourceFile);
+                $this->uploadService->queueSourceUpload($book, $sourceFile);
             }
 
             return $book;
@@ -192,48 +190,6 @@ class BookAdminService
         $this->fileService->deleteBookFiles($book);
 
         $book->delete();
-    }
-
-    /**
-     * Store the uploaded source file to a local temp directory, create a BookFile
-     * record, and dispatch UploadSourceFile to handle the S3 upload and conversions.
-     */
-    private function dispatchSourceFileUpload(Book $book, UploadedFile $file): void
-    {
-        $ext = strtolower($file->getClientOriginalExtension());
-        $format = BookFileFormat::from($ext);
-
-        $basePath = tempnam(sys_get_temp_dir(), 'bookshop_source_');
-        $tempPath = $basePath.'.'.$ext;
-        $file->move(dirname($tempPath), basename($tempPath));
-        @unlink($basePath);
-
-        $bookFile = BookFile::query()
-            ->where('book_id', $book->id)
-            ->where('format', $format)
-            ->where('is_source', true)
-            ->first();
-
-        if ($bookFile instanceof BookFile) {
-            if ($bookFile->path !== null) {
-                Storage::disk('s3-private')->delete($bookFile->path);
-            }
-
-            $bookFile->update([
-                'status' => BookFileStatus::Pending,
-                'path' => null,
-                'error_message' => null,
-            ]);
-        } else {
-            $bookFile = BookFile::create([
-                'book_id' => $book->id,
-                'format' => $format,
-                'status' => BookFileStatus::Pending,
-                'is_source' => true,
-            ]);
-        }
-
-        UploadSourceFile::dispatch($bookFile->id, $tempPath);
     }
 
     /**
