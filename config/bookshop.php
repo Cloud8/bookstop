@@ -17,4 +17,19 @@ return [
 
     'download_url_ttl' => (int) env('DOWNLOAD_URL_TTL', 300),
 
+    'formats' => [
+        'conversion_matrix' => [
+            'docx' => ['epub', 'fb2'],
+            'epub' => ['fb2'],
+            'fb2' => ['epub'],
+        ],
+
+        'converter_preference' => [
+            'docx_to_epub' => 'pandoc',
+            'docx_to_fb2' => 'calibre',
+            'epub_to_fb2' => 'calibre',
+            'fb2_to_epub' => 'calibre',
+        ],
+    ],
+
 ];
