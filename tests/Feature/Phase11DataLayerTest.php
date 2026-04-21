@@ -76,12 +76,18 @@ class Phase11DataLayerTest extends TestCase
 
     /**
      * Rule 81: Non-revoked user_book (revoked_at = null) allows download.
-     * A ready EPUB BookFile must exist for the download to succeed.
-     * Full redirect requires Phase 13.4 DownloadService BookFile-based implementation.
      */
-    #[Group('phase-13-4')]
     public function test_non_revoked_user_book_allows_download(): void
     {
-        $this->markTestSkipped('Requires Phase 13.4: DownloadService BookFile-based implementation.');
+        $this->mockPrivateDisk();
+
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
+
+        $response = $this->actingAs($user)->get(route('books.download', $book));
+
+        $response->assertRedirect();
     }
 }
