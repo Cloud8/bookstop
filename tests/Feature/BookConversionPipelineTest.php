@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
-class Phase132ConversionPipelineTest extends TestCase
+class BookConversionPipelineTest extends TestCase
 {
     use RefreshDatabase;
 

@@ -58,7 +58,9 @@ class ConvertBookFormat implements ShouldQueue
             $source->refresh();
 
             if ($source->updated_at->isAfter($sourceUpdatedAt)) {
-                // Source was re-uploaded during conversion — abort silently.
+                // Source was re-uploaded during conversion — reset to pending so the new job can pick it up.
+                $target->update(['status' => BookFileStatus::Pending]);
+
                 return;
             }
 

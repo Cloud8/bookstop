@@ -7,11 +7,13 @@ namespace App\Features\Admin\Services;
 use App\Enums\BookFileFormat;
 use App\Enums\BookFileStatus;
 use App\Features\Admin\Contracts\FormatConverter;
+use App\Features\Admin\Exceptions\ConversionException;
 use App\Features\Admin\Jobs\ConvertBookFormat;
 use App\Features\Admin\Services\Converters\CalibreConverter;
 use App\Features\Admin\Services\Converters\PandocConverter;
 use App\Models\BookFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BookConversionService
 {
@@ -101,17 +103,24 @@ class BookConversionService
         $sourceExt = $source->format->extension();
         $targetExt = $target->format->extension();
 
-        $sourceTmp = $tmpDir.'/'.\Str::uuid().'.'.$sourceExt;
-        $outputTmp = $tmpDir.'/'.\Str::uuid().'.'.$targetExt;
+        $sourceTmp = $tmpDir.'/'.Str::uuid().'.'.$sourceExt;
+        $outputTmp = $tmpDir.'/'.Str::uuid().'.'.$targetExt;
 
         try {
             $contents = Storage::disk('s3-private')->get($source->path);
+
+            if ($contents === null) {
+                throw new ConversionException(
+                    "Source file could not be downloaded from S3: {$source->path}"
+                );
+            }
+
             file_put_contents($sourceTmp, $contents);
 
             $converter = $this->resolveConverter($source->format, $target->format);
             $converter->convert($sourceTmp, $outputTmp, $source->format, $target->format);
 
-            $s3Path = "books/{$target->book_id}/".\Str::uuid().'.'.$targetExt;
+            $s3Path = "books/{$target->book_id}/".Str::uuid().'.'.$targetExt;
             Storage::disk('s3-private')->put($s3Path, file_get_contents($outputTmp));
 
             $target->update([
