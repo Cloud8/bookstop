@@ -34,7 +34,8 @@ class StoreBookRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'cover' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_thumb' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'source_file' => ['nullable', 'file', 'mimes:docx,epub,fb2', 'max:102400'],
+            // After real file cases rm mime type validation
+            'source_file' => ['nullable', 'file',  'max:102400'],
             'annotation' => ['nullable', 'string', 'max:5000'],
             'excerpt' => ['nullable', 'string', 'max:10000'],
             'fragment' => ['nullable', 'string', 'max:100000'],

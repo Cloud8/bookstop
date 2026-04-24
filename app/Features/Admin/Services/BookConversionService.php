@@ -109,7 +109,7 @@ class BookConversionService
         try {
             $stream = Storage::disk('s3-private')->readStream($source->path);
 
-            if ($stream === null) {
+            if (! is_resource($stream)) {
                 throw new ConversionException(
                     "Source file could not be downloaded from S3: {$source->path}"
                 );
@@ -121,7 +121,7 @@ class BookConversionService
             $converter = $this->resolveConverter($source->format, $target->format);
             $converter->convert($sourceTmp, $outputTmp, $source->format, $target->format);
 
-            $s3Path = "books/{$target->book_id}/".Str::uuid().'.'.$targetExt;
+            $s3Path = "books/{$target->book_id}/derived.{$targetExt}";
             Storage::disk('s3-private')->put($s3Path, fopen($outputTmp, 'r'));
 
             $target->update([

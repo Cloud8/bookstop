@@ -10,7 +10,6 @@ use App\Models\BookFile;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class UploadSourceFile implements ShouldQueue
 {
@@ -22,7 +21,7 @@ class UploadSourceFile implements ShouldQueue
 
     /**
      * @param  int  $bookFileId  ID of the BookFile record (is_source=true, status=pending)
-     * @param  string  $tempPath  Absolute path to the temp file on local disk
+     * @param  string  $tempPath  Relative local storage  path to the temp file
      */
     public function __construct(
         public readonly int $bookFileId,
@@ -36,31 +35,31 @@ class UploadSourceFile implements ShouldQueue
         $bookFile = BookFile::find($this->bookFileId);
 
         if (! $bookFile instanceof BookFile) {
-            @unlink($this->tempPath);
-
             return;
         }
 
         $ext = $bookFile->format->extension();
-        $s3Path = "books/{$bookFile->book_id}/".Str::uuid().'.'.$ext;
+        $s3Path = "books/{$bookFile->book_id}/".'source.'.$ext;
 
-        $handle = fopen($this->tempPath, 'r');
+        $handle = Storage::disk('local')->readStream($this->tempPath);
 
-        if ($handle === false) {
-            throw new \RuntimeException("Cannot open temp file for reading: {$this->tempPath}");
+        if (! is_resource($handle)) {
+            throw new \RuntimeException("Cannot open temp file stream for reading: {$this->tempPath}");
         }
 
-        Storage::disk('s3-private')->put($s3Path, $handle);
-        fclose($handle);
+        try {
+            if (Storage::disk('s3-private')->writeStream($s3Path, $handle)) {
+                Storage::disk('local')->delete($this->tempPath);
+                $bookFile->update([
+                    'path' => $s3Path,
+                    'status' => BookFileStatus::Ready,
+                ]);
 
-        $bookFile->update([
-            'path' => $s3Path,
-            'status' => BookFileStatus::Ready,
-        ]);
-
-        @unlink($this->tempPath);
-
-        $conversionService->dispatchConversions($bookFile);
+                $conversionService->dispatchConversions($bookFile);
+            }
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
@@ -69,7 +68,7 @@ class UploadSourceFile implements ShouldQueue
      */
     public function failed(\Throwable $e): void
     {
-        @unlink($this->tempPath);
+        Storage::disk('local')->delete($this->tempPath);
 
         $bookFile = BookFile::find($this->bookFileId);
         $bookFile?->update([

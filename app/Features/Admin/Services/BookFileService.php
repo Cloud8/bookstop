@@ -13,7 +13,7 @@ use App\Models\BookFile;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use RuntimeException;
 
 class BookFileService
 {
@@ -23,7 +23,7 @@ class BookFileService
      */
     public function uploadDerived(Book $book, UploadedFile $file, BookFileFormat $format): void
     {
-        $s3Path = $this->streamToS3($file->getRealPath(), $book->id, $format);
+        $s3Path = $this->streamToS3($file, "books/{$book->id}/derived.{$format->extension()}");
 
         $this->upsertBookFile($book, $format, isSource: false, attributes: [
             'path' => $s3Path,
@@ -42,7 +42,7 @@ class BookFileService
         $ext = strtolower($file->getClientOriginalExtension());
         $format = BookFileFormat::from($ext);
 
-        $tempPath = $this->moveToTemp($file, $ext);
+        $tempPath = $this->moveToTemp($file);
         $bookFile = $this->upsertSourceBookFile($book, $format);
 
         UploadSourceFile::dispatch($bookFile->id, $tempPath)->afterCommit();
@@ -90,18 +90,21 @@ class BookFileService
         });
     }
 
-    private function streamToS3(string $localPath, int $bookId, BookFileFormat $format): string
+    private function streamToS3(UploadedFile $file, string $s3Path): string
     {
-        $s3Path = "books/{$bookId}/".Str::uuid().'.'.$format->extension();
+        $tempPath = $file->store('temp', 'local') ?: throw new RuntimeException('Cannot store temp file.');
 
-        $handle = fopen($localPath, 'r');
+        try {
+            $handle = Storage::disk('local')->readStream($tempPath);
 
-        if ($handle === false) {
-            throw new \RuntimeException("Cannot open file for reading: {$localPath}");
+            if (! is_resource($handle)) {
+                throw new RuntimeException("Cannot open temp stream for reading: {$tempPath}");
+            }
+
+            Storage::disk('s3-private')->writeStream($s3Path, $handle);
+        } finally {
+            Storage::disk('local')->delete($tempPath);
         }
-
-        Storage::disk('s3-private')->put($s3Path, $handle);
-        fclose($handle);
 
         return $s3Path;
     }
@@ -149,13 +152,8 @@ class BookFileService
             ->first();
     }
 
-    private function moveToTemp(UploadedFile $file, string $ext): string
+    private function moveToTemp(UploadedFile $file): string
     {
-        $basePath = tempnam(sys_get_temp_dir(), 'bookshop_source_');
-        $tempPath = $basePath.'.'.$ext;
-        $file->move(dirname($tempPath), basename($tempPath));
-        @unlink($basePath);
-
-        return $tempPath;
+        return $file->store('temp', 'local') ?: throw new RuntimeException('Can`t create temporary file');
     }
 }

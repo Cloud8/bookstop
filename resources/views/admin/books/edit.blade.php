@@ -30,17 +30,17 @@
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <p class="mt-2 text-xs opacity-75">Загруженные файлы (обложка, epub) были сброшены браузером — прикрепите их повторно перед отправкой.</p>
+            <p class="mt-2 text-xs opacity-75">Загруженные файлы (обложка) были сброшены браузером — прикрепите их повторно перед отправкой.</p>
         </div>
     @endif
 
+    {{-- Main book form: metadata, text content, covers, extra settings --}}
+    {{-- NOTE: The transliterate/slugify logic below is duplicated in create.blade.php.
+         This is intentional until a shared Alpine.js module is introduced. --}}
     <form
         method="POST"
         action="{{ route('admin.books.update', $book) }}"
         enctype="multipart/form-data"
-        {{-- NOTE: The transliterate/slugify logic below is duplicated in create.blade.php.
-             This is intentional until a shared Alpine.js module (e.g. via @js or a
-             dedicated JS file loaded via @vite) is introduced. --}}
         x-data="{
             slugManuallyEdited: true,
             transliterate(text) {
@@ -77,329 +77,10 @@
         @method('PUT')
 
         <div class="bg-surface border border-border-subtle rounded-xl divide-y divide-border-subtle">
-
-            {{-- Basic info --}}
-            <div class="p-6 space-y-5">
-                <h2 class="text-xs font-sans font-semibold text-text-muted uppercase tracking-widest">Основное</h2>
-
-                {{-- Title --}}
-                <div>
-                    <label for="title" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Название <span class="text-error">*</span>
-                    </label>
-                    <input
-                        id="title"
-                        type="text"
-                        name="title"
-                        value="{{ old('title', $book->title) }}"
-                        @input="onTitleInput($event)"
-                        required
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('title') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >
-                    @error('title')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Slug --}}
-                <div>
-                    <label for="slug" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Slug <span class="text-error">*</span>
-                    </label>
-                    <input
-                        id="slug"
-                        x-ref="slug"
-                        type="text"
-                        name="slug"
-                        value="{{ old('slug', $book->slug) }}"
-                        @input="slugManuallyEdited = true"
-                        pattern="[a-zA-Z0-9_\-]+"
-                        title="Только латинские буквы, цифры, дефисы и подчёркивания"
-                        required
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface font-mono placeholder:text-text-subtle transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('slug') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >
-                    <p class="mt-1 text-xs text-text-subtle">Используется в URL книги.</p>
-                    @error('slug')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Price --}}
-                <div>
-                    <label for="price" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Цена ({{ config('shop.currency_symbol') }}) <span class="text-error">*</span>
-                    </label>
-                    <input
-                        id="price"
-                        type="number"
-                        name="price"
-                        value="{{ old('price', $book->price / 100) }}"
-                        min="0"
-                        step="0.01"
-                        required
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('price') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >
-                    <p class="mt-1 text-xs text-text-subtle">
-                        Текущая цена: {{ number_format($book->price / 100, config('shop.currency_decimals'), config('shop.currency_decimal_sep'), ' ') }} {{ config('shop.currency_symbol') }}
-                    </p>
-                    @error('price')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Status --}}
-                <div>
-                    <label for="status" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Статус <span class="text-error">*</span>
-                    </label>
-                    <select
-                        id="status"
-                        name="status"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('status') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >
-                        <option value="draft" @selected(old('status', $book->status->value) === 'draft')>Черновик</option>
-                        <option value="published" @selected(old('status', $book->status->value) === 'published')>Опубликована</option>
-                    </select>
-                    @error('status')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-            </div>
-
-            {{-- Text content --}}
-            <div class="p-6 space-y-5">
-                <h2 class="text-xs font-sans font-semibold text-text-muted uppercase tracking-widest">Текстовый контент</h2>
-
-                {{-- Annotation --}}
-                <div>
-                    <label for="annotation" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Аннотация
-                    </label>
-                    <textarea
-                        id="annotation"
-                        name="annotation"
-                        rows="4"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('annotation') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >{{ old('annotation', $book->annotation) }}</textarea>
-                    @error('annotation')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Excerpt --}}
-                <div>
-                    <label for="excerpt" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Отрывок
-                    </label>
-                    <textarea
-                        id="excerpt"
-                        name="excerpt"
-                        rows="6"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('excerpt') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >{{ old('excerpt', $book->excerpt) }}</textarea>
-                    @error('excerpt')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Fragment --}}
-                <div>
-                    <label for="fragment" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Фрагмент
-                        <span class="text-xs font-normal text-text-subtle ml-1">(для страницы ознакомительного чтения)</span>
-                    </label>
-                    <textarea
-                        id="fragment"
-                        name="fragment"
-                        rows="12"
-                        class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface placeholder:text-text-subtle transition resize-y
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('fragment') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >{{ old('fragment', $book->fragment) }}</textarea>
-                    @error('fragment')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-            </div>
-
-            {{-- Files --}}
-            <div class="p-6 space-y-5">
-                <h2 class="text-xs font-sans font-semibold text-text-muted uppercase tracking-widest">Файлы</h2>
-
-                {{-- Cover --}}
-                <div>
-                    <label for="cover" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Обложка
-                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 5 МБ)</span>
-                    </label>
-                    @if ($book->cover_url)
-                        <div class="mb-3 flex items-start gap-4">
-                            <img
-                                src="{{ $book->cover_url }}"
-                                alt="Текущая обложка"
-                                class="w-20 h-28 object-cover rounded-lg border border-border-subtle"
-                            >
-                            <div class="text-xs text-text-muted pt-1">
-                                <p class="font-medium text-text-primary mb-0.5">Текущая обложка</p>
-                                <p>Загрузите новый файл, чтобы заменить.</p>
-                            </div>
-                        </div>
-                    @endif
-                    <input
-                        id="cover"
-                        type="file"
-                        name="cover"
-                        accept="image/jpeg,image/png,image/webp"
-                        class="w-full text-sm text-text-muted
-                            file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border-subtle
-                            file:text-sm file:font-medium file:text-text-primary file:bg-surface-muted
-                            hover:file:bg-brand-50 hover:file:border-brand-300 hover:file:text-brand-700
-                            file:transition file:cursor-pointer cursor-pointer"
-                    >
-                    @error('cover')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Cover thumbnail --}}
-                <div>
-                    <label for="cover_thumb" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Миниатюра обложки
-                        <span class="text-xs font-normal text-text-subtle ml-1">(jpg, png, webp — до 2 МБ)</span>
-                    </label>
-                    @if ($book->cover_thumb_url)
-                        <div class="mb-3 flex items-start gap-4">
-                            <img
-                                src="{{ $book->cover_thumb_url }}"
-                                alt="Текущая миниатюра"
-                                class="w-10 h-14 object-cover rounded border border-border-subtle"
-                            >
-                            <div class="text-xs text-text-muted pt-1">
-                                <p class="font-medium text-text-primary mb-0.5">Текущая миниатюра</p>
-                                <p>Загрузите новый файл, чтобы заменить.</p>
-                            </div>
-                        </div>
-                    @endif
-                    <input
-                        id="cover_thumb"
-                        type="file"
-                        name="cover_thumb"
-                        accept="image/jpeg,image/png,image/webp"
-                        class="w-full text-sm text-text-muted
-                            file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border-subtle
-                            file:text-sm file:font-medium file:text-text-primary file:bg-surface-muted
-                            hover:file:bg-brand-50 hover:file:border-brand-300 hover:file:text-brand-700
-                            file:transition file:cursor-pointer cursor-pointer"
-                    >
-                    @error('cover_thumb')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Epub --}}
-                <div>
-                    <label for="epub" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Epub файл
-                        <span class="text-xs font-normal text-text-subtle ml-1">(до 100 МБ)</span>
-                    </label>
-                    {{-- TODO Phase 13.5: show book_files status block here --}}
-                    <input
-                        id="epub"
-                        type="file"
-                        name="epub"
-                        accept=".epub"
-                        class="w-full text-sm text-text-muted
-                            file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border-subtle
-                            file:text-sm file:font-medium file:text-text-primary file:bg-surface-muted
-                            hover:file:bg-brand-50 hover:file:border-brand-300 hover:file:text-brand-700
-                            file:transition file:cursor-pointer cursor-pointer"
-                    >
-                    @error('epub')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-            </div>
-
-            {{-- Extra settings --}}
-            <div class="p-6 space-y-5">
-                <h2 class="text-xs font-sans font-semibold text-text-muted uppercase tracking-widest">Дополнительно</h2>
-
-                {{-- Featured --}}
-                <div class="flex items-center gap-3">
-                    <input
-                        id="is_featured"
-                        type="checkbox"
-                        name="is_featured"
-                        value="1"
-                        @checked(old('is_featured', $book->is_featured))
-                        class="w-4 h-4 rounded border-border-subtle text-brand-600 focus:ring-brand-500 cursor-pointer"
-                    >
-                    <label for="is_featured" class="text-sm text-text-primary cursor-pointer">
-                        В избранном
-                        <span class="text-xs text-text-subtle ml-1">— показывать на главной странице</span>
-                    </label>
-                    @error('is_featured')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Adult content --}}
-                <div class="flex items-center gap-3">
-                    <input
-                        id="is_adult"
-                        type="checkbox"
-                        name="is_adult"
-                        value="1"
-                        @checked(old('is_adult', $book->is_adult))
-                        class="w-4 h-4 rounded border-border-subtle text-brand-600 focus:ring-brand-500 cursor-pointer"
-                    >
-                    <label for="is_adult" class="text-sm text-text-primary cursor-pointer">
-                        Контент 18+
-                        <span class="text-xs text-text-subtle ml-1">— требует подтверждения возраста</span>
-                    </label>
-                    @error('is_adult')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Sort order --}}
-                <div>
-                    <label for="sort_order" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Порядок сортировки
-                    </label>
-                    <input
-                        id="sort_order"
-                        type="number"
-                        name="sort_order"
-                        value="{{ old('sort_order', $book->sort_order) }}"
-                        min="0"
-                        class="w-32 px-3.5 py-2.5 rounded-lg border text-sm text-text-primary bg-surface transition
-                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                            @error('sort_order') border-error-dot bg-error-light @else border-border-subtle @enderror"
-                    >
-                    <p class="mt-1 text-xs text-text-subtle">Меньшее число — выше в списке.</p>
-                    @error('sort_order')
-                        <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
-                    @enderror
-                </div>
-
-            </div>
-
+            @include('admin.books._partials.form-meta')
+            @include('admin.books._partials.form-content')
+            @include('admin.books._partials.form-covers')
+            @include('admin.books._partials.form-extra')
         </div>
 
         {{-- Form actions --}}
@@ -419,6 +100,9 @@
         </div>
 
     </form>
+
+    {{-- Book files: separate section with its own action forms, outside the main form --}}
+    @include('admin.books._partials.book-files')
 
     {{-- Delete section --}}
     <div
