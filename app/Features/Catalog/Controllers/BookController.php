@@ -41,7 +41,13 @@ class BookController extends Controller
             ? $this->catalogService->isOwnedByUser($book, $user)
             : false;
 
-        return view('books.show', compact('book', 'isOwned'));
+        $readyClientFiles = collect();
+        if ($isOwned) {
+            $book->load('files');
+            $readyClientFiles = $book->files->filter(fn ($f) => $f->isReady() && $f->isClientAccessible())->values();
+        }
+
+        return view('books.show', compact('book', 'isOwned', 'readyClientFiles'));
     }
 
     public function fragment(Request $request, Book $book): View
