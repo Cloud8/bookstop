@@ -312,6 +312,9 @@ class BookFileControllerTest extends TestCase
     public function test_admin_can_download_any_format_including_docx(): void
     {
         Storage::fake('s3-private');
+        Storage::fake('s3-private-presign')->buildTemporaryUrlsUsing(
+            fn (string $path) => 'https://s3.example.com/'.$path.'?X-Amz-Signature=fake'
+        );
 
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create();
@@ -329,7 +332,7 @@ class BookFileControllerTest extends TestCase
 
         // Should redirect to the temporary S3 URL (not 403 or 404).
         $response->assertRedirect();
-        $this->assertStringNotContainsString('/login', $response->headers->get('Location') ?? '');
+        $this->assertStringContainsString('s3.example.com', $response->headers->get('Location') ?? '');
     }
 
     public function test_admin_download_returns_404_when_file_has_no_path(): void
