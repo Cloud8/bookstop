@@ -122,13 +122,17 @@ class BookConversionService
             $converter->convert($sourceTmp, $outputTmp, $source->format, $target->format);
 
             $s3Path = "books/{$target->book_id}/derived.{$targetExt}";
-            Storage::disk('s3-private')->put($s3Path, fopen($outputTmp, 'r'));
+            $outputHandle = fopen($outputTmp, 'r');
+            Storage::disk('s3-private')->put($s3Path, $outputHandle);
 
             $target->update([
                 'path' => $s3Path,
                 'status' => BookFileStatus::Ready,
             ]);
         } finally {
+            if (isset($outputHandle) && is_resource($outputHandle)) {
+                fclose($outputHandle);
+            }
             if (file_exists($sourceTmp)) {
                 unlink($sourceTmp);
             }

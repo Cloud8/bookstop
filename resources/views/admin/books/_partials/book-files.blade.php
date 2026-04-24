@@ -22,12 +22,12 @@
 
         badgeClass(status) {
             const map = {
-                pending:    'bg-yellow-100 text-yellow-800',
-                processing: 'bg-blue-100 text-blue-800',
-                ready:      'bg-green-100 text-green-800',
-                failed:     'bg-red-100 text-red-800',
+                pending:    'bg-warning-light text-warning',
+                processing: 'bg-info-light text-info',
+                ready:      'bg-success-light text-success',
+                failed:     'bg-error-light text-error',
             };
-            return map[status] ?? 'bg-gray-100 text-gray-700';
+            return map[status] ?? 'bg-surface-muted text-text-muted';
         },
 
         needsPolling() {

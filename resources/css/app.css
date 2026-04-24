@@ -42,6 +42,10 @@
     --color-warning:        #92400e;
     --color-warning-light:  #fffbeb;
     --color-warning-border: #fde68a;
+
+    --color-info:        #1e40af;
+    --color-info-light:  #eff6ff;
+    --color-info-border: #bfdbfe;
 }
 
 [x-cloak] { display: none !important; }

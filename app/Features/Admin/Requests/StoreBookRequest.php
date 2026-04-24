@@ -34,8 +34,6 @@ class StoreBookRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'cover' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_thumb' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            // After real file cases rm mime type validation
-            'source_file' => ['nullable', 'file',  'max:102400'],
             'annotation' => ['nullable', 'string', 'max:5000'],
             'excerpt' => ['nullable', 'string', 'max:10000'],
             'fragment' => ['nullable', 'string', 'max:100000'],
@@ -66,9 +64,6 @@ class StoreBookRequest extends FormRequest
             'cover_thumb.file' => 'Миниатюра должна быть файлом.',
             'cover_thumb.mimes' => 'Миниатюра должна быть изображением в формате JPG, PNG или WebP.',
             'cover_thumb.max' => 'Размер миниатюры не должен превышать 2 МБ.',
-            'source_file.file' => 'Исходный файл книги должен быть файлом.',
-            'source_file.mimes' => 'Исходный файл должен быть в формате DOCX, EPUB или FB2.',
-            'source_file.max' => 'Размер исходного файла не должен превышать 100 МБ.',
             'annotation.max' => 'Аннотация не должна превышать 5000 символов.',
             'excerpt.max' => 'Отрывок не должен превышать 10000 символов.',
             'fragment.max' => 'Фрагмент не должен превышать 100000 символов.',

@@ -48,15 +48,17 @@ class UploadSourceFile implements ShouldQueue
         }
 
         try {
-            if (Storage::disk('s3-private')->writeStream($s3Path, $handle)) {
-                Storage::disk('local')->delete($this->tempPath);
-                $bookFile->update([
-                    'path' => $s3Path,
-                    'status' => BookFileStatus::Ready,
-                ]);
-
-                $conversionService->dispatchConversions($bookFile);
+            if (! Storage::disk('s3-private')->writeStream($s3Path, $handle)) {
+                throw new \RuntimeException("S3 writeStream failed for path: {$s3Path}");
             }
+
+            Storage::disk('local')->delete($this->tempPath);
+            $bookFile->update([
+                'path' => $s3Path,
+                'status' => BookFileStatus::Ready,
+            ]);
+
+            $conversionService->dispatchConversions($bookFile);
         } finally {
             fclose($handle);
         }
