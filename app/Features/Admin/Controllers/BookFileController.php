@@ -33,24 +33,24 @@ class BookFileController extends Controller
         return redirect()->back()->with('success', 'Исходный файл принят в обработку.');
     }
 
-    public function download(Book $book, BookFile $bookFile): RedirectResponse
+    public function download(Book $book, BookFile $file): RedirectResponse
     {
-        abort_unless($bookFile->book_id === $book->id, 404);
-        abort_unless($bookFile->path !== null, 404);
+        abort_unless($file->book_id === $book->id, 404);
+        abort_unless($file->path !== null, 404);
 
-        $url = Storage::disk('s3-private')->temporaryUrl(
-            $bookFile->path,
+        $url = Storage::disk('s3-private-presign')->temporaryUrl(
+            $file->path,
             now()->addMinutes(5),
         );
 
         return redirect($url);
     }
 
-    public function retry(Book $book, BookFile $bookFile): RedirectResponse
+    public function retry(Book $book, BookFile $file): RedirectResponse
     {
-        abort_unless($bookFile->book_id === $book->id, 404);
+        abort_unless($file->book_id === $book->id, 404);
 
-        $this->fileService->retryConversion($book, $bookFile);
+        $this->fileService->retryConversion($book, $file);
 
         return redirect()->back()->with('success', 'Конвертация запущена повторно.');
     }

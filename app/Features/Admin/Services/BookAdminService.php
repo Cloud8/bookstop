@@ -82,7 +82,6 @@ readonly class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $sourceFile,
     ): Book {
         $newStatus = BookStatus::from($data['status']);
 
@@ -96,7 +95,7 @@ readonly class BookAdminService
             throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
-        return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $sourceFile): Book {
+        return DB::transaction(function () use ($book, $data, $cover, $coverThumb): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
             $book->status = BookStatus::from($data['status']);
@@ -117,10 +116,6 @@ readonly class BookAdminService
             }
 
             $book->save();
-
-            if ($sourceFile !== null) {
-                $this->fileService->queueSourceUpload($book, $sourceFile);
-            }
 
             return $book;
         });
