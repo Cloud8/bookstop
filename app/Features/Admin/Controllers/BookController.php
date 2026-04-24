@@ -41,7 +41,7 @@ class BookController extends Controller
             $request->validated(),
             $request->file('cover'),
             $request->file('cover_thumb'),
-            $request->file('epub'),
+            $request->file('source_file'),
         );
 
         return redirect()->route('admin.books.edit', $book)
@@ -64,7 +64,6 @@ class BookController extends Controller
                 $request->validated(),
                 $request->file('cover'),
                 $request->file('cover_thumb'),
-                $request->file('epub'),
             );
         } catch (InvalidArgumentException $e) {
             return redirect()->route('admin.books.edit', $book)

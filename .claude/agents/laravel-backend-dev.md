@@ -204,7 +204,8 @@ Business logic lives in service classes under `app/Features/{Feature}/Services/`
 
 ### Jobs / Events
 
-- epub upload: `App\Features\Admin\Jobs\ProcessBookFileUpload` (queued — never block HTTP for S3 upload)
+- Book source file upload: `App\Features\Admin\Jobs\UploadSourceFile` (queued — never block HTTP for S3 upload)
+- Book format conversion: `App\Features\Admin\Jobs\ConvertBookFormat` (dispatched by `UploadSourceFile` after source is ready)
 - Payment confirmation: `App\Features\Checkout\Jobs\ProcessPaymentConfirmation`
 - `App\Features\Checkout\Events\OrderPaid` → `App\Features\Checkout\Listeners\SendOrderConfirmationEmail` (queued)
 
@@ -214,12 +215,19 @@ Business logic lives in service classes under `app/Features/{Feature}/Services/`
 // Covers — public bucket
 Storage::disk('s3-public')->put($path, $file);
 
-// epubs — private bucket  
+// Book files (epub, fb2, docx) — private bucket
 Storage::disk('s3-private')->put($path, $file);
 
-// Download URL
-Storage::disk('s3-private')->temporaryUrl($path, now()->addMinutes(config('bookshop.download_url_ttl')));
+// Admin/client download — presigned URL (uses s3-private-presign disk, not s3-private)
+// Always include ResponseContentDisposition to force download
+Storage::disk('s3-private-presign')->temporaryUrl(
+    $path,
+    now()->addMinutes(5),
+    ['ResponseContentDisposition' => 'attachment; filename="'.$filename.'"']
+);
 ```
+
+Book files use fixed S3 keys: `books/{book_id}/source.{ext}` and `books/{book_id}/derived.{ext}`. Re-uploading overwrites in-place — no orphaned objects.
 
 ---
 

@@ -23,7 +23,7 @@
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <p class="mt-2 text-xs opacity-75">Загруженные файлы (обложка, epub) были сброшены браузером — прикрепите их повторно перед отправкой.</p>
+            <p class="mt-2 text-xs opacity-75">Загруженные файлы (обложка, исходный файл) были сброшены браузером — прикрепите их повторно перед отправкой.</p>
         </div>
     @endif
 
@@ -262,24 +262,25 @@
                     @enderror
                 </div>
 
-                {{-- Epub --}}
+                {{-- Source file --}}
                 <div>
-                    <label for="epub" class="block text-sm font-medium text-text-primary mb-1.5">
-                        Epub файл
-                        <span class="text-xs font-normal text-text-subtle ml-1">(до 100 МБ)</span>
+                    <label for="source_file" class="block text-sm font-medium text-text-primary mb-1.5">
+                        Исходный файл
+                        <span class="text-xs font-normal text-text-subtle ml-1">(.docx, .epub, .fb2 — до 100 МБ)</span>
                     </label>
                     <input
-                        id="epub"
+                        id="source_file"
                         type="file"
-                        name="epub"
-                        accept=".epub"
+                        name="source_file"
+                        accept=".docx,.epub,.fb2"
                         class="w-full text-sm text-text-muted
                             file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border-subtle
                             file:text-sm file:font-medium file:text-text-primary file:bg-surface-muted
                             hover:file:bg-brand-50 hover:file:border-brand-300 hover:file:text-brand-700
                             file:transition file:cursor-pointer cursor-pointer"
                     >
-                    @error('epub')
+                    <p class="mt-1 text-xs text-text-subtle">Исходник будет конвертирован в нужные форматы автоматически после создания книги.</p>
+                    @error('source_file')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
                     @enderror
                 </div>

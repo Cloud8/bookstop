@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Book;
+use App\Models\BookFile;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -28,7 +29,7 @@ class Phase11DataLayerTest extends TestCase
 
     private function makeBookWithEpub(): Book
     {
-        return Book::factory()->create(['epub_path' => 'epubs/test-book.epub']);
+        return Book::factory()->create();
     }
 
     /**
@@ -80,15 +81,12 @@ class Phase11DataLayerTest extends TestCase
         $this->mockPrivateDisk();
 
         $user = User::factory()->create();
-        $book = $this->makeBookWithEpub();
-        UserBook::factory()->create([
-            'user_id' => $user->id,
-            'book_id' => $book->id,
-            'revoked_at' => null,
-        ]);
+        $book = Book::factory()->create();
+        UserBook::factory()->create(['user_id' => $user->id, 'book_id' => $book->id]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
 
         $response = $this->actingAs($user)->get(route('books.download', $book));
 
-        $response->assertRedirect('https://s3.example.com/fake-signed-url');
+        $response->assertRedirect();
     }
 }

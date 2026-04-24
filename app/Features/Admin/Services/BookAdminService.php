@@ -5,22 +5,23 @@ declare(strict_types=1);
 namespace App\Features\Admin\Services;
 
 use App\Enums\BookStatus;
-use App\Features\Admin\Jobs\ProcessBookFileUpload;
 use App\Models\Book;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Throwable;
 
-class BookAdminService
+readonly class BookAdminService
 {
-    public function __construct(private readonly BookFileService $fileService) {}
+    public function __construct(
+        private BookCoverService $coverService,
+        private BookFileService $fileService,
+    ) {}
 
     /**
      * Create a new book record, upload cover files synchronously, and dispatch
-     * the epub upload job if an epub file is provided.
+     * the source file upload job if a source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -30,9 +31,9 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
+        ?UploadedFile $sourceFile,
     ): Book {
-        return DB::transaction(function () use ($data, $cover, $coverThumb, $epub): Book {
+        return DB::transaction(function () use ($data, $cover, $coverThumb, $sourceFile): Book {
             $book = new Book;
             $book->title = $data['title'];
             $book->slug = $data['slug'];
@@ -48,27 +49,19 @@ class BookAdminService
             $book->save();
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             if ($cover !== null || $coverThumb !== null) {
                 $book->save();
             }
 
-            if ($epub !== null) {
-                $tempPath = $epub->store('temp', 'local');
-
-                if ($tempPath !== false) {
-                    ProcessBookFileUpload::dispatch(
-                        $book->id,
-                        Storage::disk('local')->path($tempPath),
-                        $epub->getClientOriginalExtension(),
-                    );
-                }
+            if ($sourceFile !== null) {
+                $this->fileService->queueSourceUpload($book, $sourceFile);
             }
 
             return $book;
@@ -77,7 +70,7 @@ class BookAdminService
 
     /**
      * Update an existing book record, upload cover files synchronously, and
-     * dispatch the epub upload job if a new epub file is provided.
+     * dispatch the source file upload job if a new source file is provided.
      *
      * @param  array<string, mixed>  $data  Validated form data (price in shop currency)
      *
@@ -89,7 +82,6 @@ class BookAdminService
         array $data,
         ?UploadedFile $cover,
         ?UploadedFile $coverThumb,
-        ?UploadedFile $epub,
     ): Book {
         $newStatus = BookStatus::from($data['status']);
 
@@ -98,12 +90,12 @@ class BookAdminService
             throw new InvalidArgumentException('Нельзя снять с публикации книгу, у которой есть покупки.');
         }
 
-        // Cannot publish a book that has no epub file.
-        if ($newStatus === BookStatus::Published && $epub === null && $book->epub_path === null) {
-            throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+        // Cannot publish a book that has no client-accessible ready file.
+        if ($newStatus === BookStatus::Published && ! $book->hasClientReadyFile()) {
+            throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
         }
 
-        return DB::transaction(function () use ($book, $data, $cover, $coverThumb, $epub): Book {
+        return DB::transaction(function () use ($book, $data, $cover, $coverThumb): Book {
             $book->title = $data['title'];
             $book->slug = $data['slug'];
             $book->status = BookStatus::from($data['status']);
@@ -116,26 +108,14 @@ class BookAdminService
             $book->sort_order = (int) ($data['sort_order'] ?? 0);
 
             if ($cover !== null) {
-                $book->cover_path = $this->fileService->uploadCover($book, $cover);
+                $book->cover_path = $this->coverService->uploadCover($book, $cover);
             }
 
             if ($coverThumb !== null) {
-                $book->cover_thumb_path = $this->fileService->uploadCoverThumb($book, $coverThumb);
+                $book->cover_thumb_path = $this->coverService->uploadCoverThumb($book, $coverThumb);
             }
 
             $book->save();
-
-            if ($epub !== null) {
-                $tempPath = $epub->store('temp', 'local');
-
-                if ($tempPath !== false) {
-                    ProcessBookFileUpload::dispatch(
-                        $book->id,
-                        Storage::disk('local')->path($tempPath),
-                        $epub->getClientOriginalExtension(),
-                    );
-                }
-            }
 
             return $book;
         });
@@ -157,8 +137,8 @@ class BookAdminService
             }
             $book->status = BookStatus::Draft;
         } else {
-            if ($book->epub_path === null) {
-                throw new InvalidArgumentException('Нельзя опубликовать книгу без файла epub.');
+            if (! $book->hasClientReadyFile()) {
+                throw new InvalidArgumentException('Нельзя опубликовать книгу без готового файла для скачивания.');
             }
             $book->status = BookStatus::Published;
         }
@@ -199,8 +179,10 @@ class BookAdminService
      */
     public function deleteBook(Book $book): void
     {
-        $this->fileService->deleteCover($book);
-        $this->fileService->deleteEpub($book);
+        $book->load('files');
+
+        $this->coverService->deleteCover($book);
+        $this->fileService->deleteAll($book);
 
         $book->delete();
     }

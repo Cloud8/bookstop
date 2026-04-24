@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\BookStatus;
-use App\Features\Admin\Jobs\ProcessBookFileUpload;
+use App\Features\Admin\Jobs\UploadSourceFile;
 use App\Models\Book;
+use App\Models\BookFile;
 use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -166,27 +167,32 @@ class AdminBookControllerTest extends TestCase
         Storage::disk('s3-public')->assertExists($book->cover_path);
     }
 
-    public function test_epub_upload_dispatches_process_book_file_upload_job(): void
+    public function test_source_file_upload_on_create_dispatches_upload_source_file_job(): void
     {
-        Queue::fake();
+        Bus::fake();
+        Storage::fake('s3-public');
 
         $admin = User::factory()->admin()->create();
 
-        $epub = UploadedFile::fake()->create('book.epub', 1024, 'application/epub+zip');
+        $sourceFile = UploadedFile::fake()->create('book.epub', 100, 'application/epub+zip');
 
         $this->actingAs($admin)->post('/admin/books', [
-            'title' => 'Книга с epub',
-            'slug' => 'epub-book',
-            'price' => '100',
+            'title' => 'Книга с исходным файлом',
+            'slug' => 'book-with-source',
+            'price' => '590',
             'sort_order' => 0,
-            'epub' => $epub,
+            'source_file' => $sourceFile,
         ]);
 
-        $book = Book::query()->where('slug', 'epub-book')->firstOrFail();
+        $book = Book::query()->where('slug', 'book-with-source')->firstOrFail();
+        $this->assertDatabaseHas('book_files', [
+            'book_id' => $book->id,
+            'format' => 'epub',
+            'is_source' => true,
+            'status' => 'pending',
+        ]);
 
-        Queue::assertPushed(ProcessBookFileUpload::class, function (ProcessBookFileUpload $job) use ($book): bool {
-            return $job->bookId === $book->id;
-        });
+        Bus::assertDispatched(UploadSourceFile::class);
     }
 
     // -------------------------------------------------------------------------
@@ -232,10 +238,11 @@ class AdminBookControllerTest extends TestCase
         $response->assertRedirect(route('admin.books.edit', $book));
     }
 
-    public function test_update_cannot_publish_book_without_epub(): void
+    public function test_update_cannot_publish_book_without_ready_file(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->create(['status' => BookStatus::Draft, 'epub_path' => null]);
+        $book = Book::factory()->create(['status' => BookStatus::Draft]);
+        // No BookFile records — hasClientReadyFile() returns false
 
         $response = $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
             'title' => $book->title,
@@ -294,10 +301,11 @@ class AdminBookControllerTest extends TestCase
     // Toggle status — Rule 15, 17
     // -------------------------------------------------------------------------
 
-    public function test_toggle_status_publishes_draft_book_with_epub(): void
+    public function test_toggle_status_publishes_draft_book_with_ready_file(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->withEpub()->create(['status' => BookStatus::Draft]);
+        $book = Book::factory()->create(['status' => BookStatus::Draft]);
+        BookFile::factory()->epub()->ready()->create(['book_id' => $book->id]);
 
         $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
             ->assertJson(['status' => 'published']);
@@ -305,14 +313,15 @@ class AdminBookControllerTest extends TestCase
         $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'published']);
     }
 
-    public function test_toggle_status_cannot_publish_draft_book_without_epub(): void
+    public function test_toggle_status_cannot_publish_draft_book_without_ready_file(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->create(['status' => BookStatus::Draft, 'epub_path' => null]);
+        $book = Book::factory()->create(['status' => BookStatus::Draft]);
+        // No BookFile records — hasClientReadyFile() returns false
 
         $this->actingAs($admin)->patch("/admin/books/{$book->slug}/toggle-status")
             ->assertStatus(422)
-            ->assertJson(['error' => 'Нельзя опубликовать книгу без файла epub.']);
+            ->assertJson(['error' => 'Нельзя опубликовать книгу без готового файла для скачивания.']);
 
         $this->assertDatabaseHas('books', ['id' => $book->id, 'status' => 'draft']);
     }
@@ -402,7 +411,7 @@ class AdminBookControllerTest extends TestCase
     public function test_admin_can_update_book_to_adult(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->withEpub()->create(['is_adult' => false, 'status' => BookStatus::Draft]);
+        $book = Book::factory()->create(['is_adult' => false, 'status' => BookStatus::Draft]);
 
         $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
             'title' => $book->title,
@@ -422,7 +431,7 @@ class AdminBookControllerTest extends TestCase
     public function test_admin_can_update_book_to_remove_adult_flag(): void
     {
         $admin = User::factory()->admin()->create();
-        $book = Book::factory()->adult()->withEpub()->create(['status' => BookStatus::Draft]);
+        $book = Book::factory()->adult()->create(['status' => BookStatus::Draft]);
 
         $this->actingAs($admin)->put("/admin/books/{$book->slug}", [
             'title' => $book->title,
