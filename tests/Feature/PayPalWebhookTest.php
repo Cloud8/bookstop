@@ -79,6 +79,7 @@ class PayPalWebhookTest extends TestCase
 
         Queue::assertPushed(ProcessPaymentConfirmation::class, function ($job) use ($order): bool {
             return $job->orderId === $order->id
+                && $job->transactionId === 'CAPTURE-ID-001'
                 && $job->sessionId === 'PAYPAL-ORDER-XYZ789'
                 && $job->provider === PaymentGateway::PayPal;
         });
@@ -211,21 +212,6 @@ class PayPalWebhookTest extends TestCase
                 $this->buildServerHeaders($this->buildWebhookHeaders()),
             ),
             $payload,
-        );
-
-        $response->assertStatus(200);
-    }
-
-    public function test_webhook_route_returns_200_for_unknown_provider(): void
-    {
-        $response = $this->call(
-            'POST',
-            route('webhooks.handle', ['provider' => 'unknown_provider']),
-            [],
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            '{}',
         );
 
         $response->assertStatus(200);

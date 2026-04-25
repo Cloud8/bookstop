@@ -27,7 +27,7 @@ class UserAccessControlTest extends TestCase
         Storage::set('s3-private-presign', $mock);
     }
 
-    private function makeBookWithEpub(): Book
+    private function makeBook(): Book
     {
         return Book::factory()->create();
     }
@@ -62,7 +62,7 @@ class UserAccessControlTest extends TestCase
     public function test_revoked_user_book_blocks_download(): void
     {
         $user = User::factory()->create();
-        $book = $this->makeBookWithEpub();
+        $book = $this->makeBook();
         UserBook::factory()->revoked()->create([
             'user_id' => $user->id,
             'book_id' => $book->id,
